@@ -2,9 +2,9 @@ import * as esbuild from 'esbuild';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { finalizeHtml } from './html.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const deployDir = path.join(root, 'deploy');
 
 const jsBuild = {
   bundle: true,
@@ -15,14 +15,14 @@ const jsBuild = {
   target: 'es2020',
   absWorkingDir: root,
   metafile: true,
-  outdir: 'deploy/assets',
 };
 
-async function bundleJs(entry, entryNames, define) {
+async function bundleJs(entry, entryNames, outdir, define) {
   const result = await esbuild.build({
     ...jsBuild,
     entryPoints: [entry],
     entryNames,
+    outdir,
     define,
   });
   const outputs = Object.keys(result.metafile.outputs);
@@ -57,14 +57,40 @@ function filesIn(dir) {
   return out;
 }
 
+function outputDir(argv) {
+  let out = 'deploy';
+  for (let i = 2; i < argv.length; i++) {
+    const arg = argv[i];
+    if (arg === '--out') {
+      const value = argv[i + 1];
+      if (!value || value.startsWith('-')) {
+        throw new Error('build failed: --out requires a directory');
+      }
+      out = value;
+      i += 1;
+      continue;
+    }
+    throw new Error(`build failed: unknown argument ${arg}`);
+  }
+  const deployDir = path.resolve(root, out);
+  const rel = path.relative(root, deployDir);
+  // "." would resolve to the repo root and delete it.
+  if (rel === '' || rel.startsWith('..') || path.isAbsolute(rel)) {
+    throw new Error('build failed: --out must be a directory inside the repo');
+  }
+  return deployDir;
+}
+
 async function main() {
+  const deployDir = outputDir(process.argv);
+  const assetsDir = path.relative(root, path.join(deployDir, 'assets')).split(path.sep).join('/');
   fs.rmSync(deployDir, { recursive: true, force: true });
   fs.mkdirSync(deployDir, { recursive: true });
 
-  const workerOut = await bundleJs('src/worker.js', 'worker-[hash]');
+  const workerOut = await bundleJs('src/worker.js', 'worker-[hash]', assetsDir);
   const workerBase = path.basename(workerOut);
   // The page resolves the worker against the bundle URL, so the hash file's basename is enough.
-  const mainOut = await bundleJs('src/main.js', 'main-[hash]', {
+  const mainOut = await bundleJs('src/main.js', 'main-[hash]', assetsDir, {
     __WORKER_FILE__: JSON.stringify(workerBase),
   });
   const cssResult = await esbuild.build({
@@ -75,7 +101,7 @@ async function main() {
     charset: 'utf8',
     legalComments: 'none',
     metafile: true,
-    outdir: 'deploy/assets',
+    outdir: assetsDir,
     entryNames: 'styles-[hash]',
   });
   const cssOutputs = Object.keys(cssResult.metafile.outputs);
@@ -85,14 +111,10 @@ async function main() {
   const cssBase = path.basename(cssOutputs[0]);
   const mainBase = path.basename(mainOut);
 
-  let html = fs.readFileSync(path.join(root, 'src', 'index.html'), 'utf8');
-  html = html.replaceAll('{{styles}}', `./assets/${cssBase}`);
-  html = html.replaceAll('{{main}}', `./assets/${mainBase}`);
-  const leftover = html.match(/\{\{[^}]*\}\}/g);
-  if (leftover) {
-    console.error(`build failed: unresolved placeholder(s) in index.html: ${leftover.join(', ')}`);
-    process.exit(1);
-  }
+  const html = finalizeHtml(fs.readFileSync(path.join(root, 'src', 'index.html'), 'utf8'), {
+    styles: `./assets/${cssBase}`,
+    main: `./assets/${mainBase}`,
+  });
   fs.writeFileSync(path.join(deployDir, 'index.html'), html);
 
   const publicDir = path.join(root, 'public');
