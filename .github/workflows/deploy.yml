@@ -46,7 +46,7 @@ jobs:
       - name: Upload (attempt 1)
         id: ftp1
         continue-on-error: true
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+        uses: SamKirkland/FTP-Deploy-Action@a51268f67f6605236975928ae28b0f7e9971d50a  # v4.3.6
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
@@ -63,7 +63,7 @@ jobs:
         id: ftp2
         if: steps.ftp1.outcome == 'failure'
         continue-on-error: true
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+        uses: SamKirkland/FTP-Deploy-Action@a51268f67f6605236975928ae28b0f7e9971d50a  # v4.3.6
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
@@ -80,7 +80,7 @@ jobs:
         id: ftp3
         if: steps.ftp1.outcome == 'failure' && steps.ftp2.outcome == 'failure'
         continue-on-error: true
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+        uses: SamKirkland/FTP-Deploy-Action@a51268f67f6605236975928ae28b0f7e9971d50a  # v4.3.6
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
