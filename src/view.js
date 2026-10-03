@@ -1,16 +1,15 @@
-import { autoNumber, classify, columnName, planSheet } from './core/excel.js';
+import { autoNumber, classify, columnName, planSheet, RISK_KINDS } from './core/excel.js';
 import { describe, RISK_LABELS, encodingLabel, delimiterLabel, formatCount, formatBytes } from './core/messages.js';
 import { PREVIEW } from './core/preview.js';
 
 /** @import { Session, Stage } from './core/session.js' */
 /** @import { Analysis, Source, OutputFile } from './core/convert.js' */
 /** @import { AppError } from './core/messages.js' */
-/** @import { RiskCounts, RiskKind, SheetPlan } from './core/excel.js' */
+/** @import { RiskCounts, SheetPlan } from './core/excel.js' */
 /** @import { EncodingVerdict } from './core/text.js' */
 
 const PREVIEW_ROWS = PREVIEW.records - 1;
 
-const RISK_KINDS = /** @type {RiskKind[]} */ (Object.keys(RISK_LABELS));
 const MODE_TITLE = '自動: 先頭に0が付いていない普通の数値だけを数値として保存します。0001 のような値は文字列のまま残ります。';
 
 /**

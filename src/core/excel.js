@@ -19,7 +19,7 @@ export const LIMITS = Object.freeze({ rows: 1_048_576, cols: 16_384, cellChars: 
  */
 
 /** @type {readonly RiskKind[]} */
-const RISK_KINDS = ['formula', 'leadingZero', 'exponent', 'date', 'numberFormat'];
+export const RISK_KINDS = ['formula', 'leadingZero', 'exponent', 'date', 'numberFormat'];
 
 const LEADING_ZERO = /^-?0\d+(\.\d+)?$/;
 const EXPONENT = /^-?(\d{12,}|\d+(\.\d+)?[eE][+-]?\d+)$/;
