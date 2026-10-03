@@ -80,7 +80,7 @@ E2E テストを Python のサーバで実行するには `E2E_SERVER=python npx
 | `src/core/session.js` | 画面の状態遷移（純粋関数） |
 | `src/worker.js` | 1 ジョブ 1 ワーカーで解析・書き出しを実行 |
 | `src/main.js`, `src/view.js` | ページの起動、ジョブ管理、描画 |
-| `scripts/build.mjs` | esbuild でバンドルし `deploy/` を作成（`--out <dir>` で出力先を変更可） |
+| `scripts/build.mjs` | esbuild でバンドルし `deploy/` を作り直す |
 | `docs/DESIGN.md` | 設計の詳細（判定ルール、xlsx の構造、状態遷移、エラー一覧） |
 | `decisions.tsv` | 設計判断の記録 |
 

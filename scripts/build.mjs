@@ -57,32 +57,9 @@ function filesIn(dir) {
   return out;
 }
 
-function outputDir(argv) {
-  let out = 'deploy';
-  for (let i = 2; i < argv.length; i++) {
-    const arg = argv[i];
-    if (arg === '--out') {
-      const value = argv[i + 1];
-      if (!value || value.startsWith('-')) {
-        throw new Error('build failed: --out requires a directory');
-      }
-      out = value;
-      i += 1;
-      continue;
-    }
-    throw new Error(`build failed: unknown argument ${arg}`);
-  }
-  const deployDir = path.resolve(root, out);
-  const rel = path.relative(root, deployDir);
-  // "." would resolve to the repo root and delete it.
-  if (rel === '' || rel.startsWith('..') || path.isAbsolute(rel)) {
-    throw new Error('build failed: --out must be a directory inside the repo');
-  }
-  return deployDir;
-}
-
 async function main() {
-  const deployDir = outputDir(process.argv);
+  if (process.argv.length > 2) throw new Error(`build failed: unknown argument ${process.argv[2]}`);
+  const deployDir = path.join(root, 'deploy');
   const assetsDir = path.relative(root, path.join(deployDir, 'assets')).split(path.sep).join('/');
   fs.rmSync(deployDir, { recursive: true, force: true });
   fs.mkdirSync(deployDir, { recursive: true });
