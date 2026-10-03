@@ -2,6 +2,7 @@
 
 import { autoNumber, classify, columnName, planSheet } from './core/excel.js';
 import { describe, RISK_LABELS, encodingLabel, delimiterLabel, formatCount, formatBytes } from './core/messages.js';
+import { PREVIEW } from './core/preview.js';
 
 /** @import { Session, Stage } from './core/session.js' */
 /** @import { Analysis, Source, OutputFile } from './core/convert.js' */
@@ -9,10 +10,7 @@ import { describe, RISK_LABELS, encodingLabel, delimiterLabel, formatCount, form
 /** @import { RiskCounts, RiskKind, SheetPlan } from './core/excel.js' */
 /** @import { EncodingVerdict } from './core/text.js' */
 
-const PREVIEW_ROWS = 100;
-/** PREVIEW.fields and PREVIEW.chars in core/convert.js, which stays out of the main bundle. */
-const PREVIEW_COLS = 200;
-const PREVIEW_CHARS = 1000;
+const PREVIEW_ROWS = PREVIEW.records - 1;
 
 const RISK_KINDS = /** @type {RiskKind[]} */ (Object.keys(RISK_LABELS));
 const MODE_TITLE = '自動: 先頭に0が付いていない普通の数値だけを数値として保存します。0001 のような値は文字列のまま残ります。';
@@ -252,7 +250,7 @@ export function render(session, refs) {
   refs.preview.hidden = shown === null;
   if (shown !== null) {
     const cols = stage.kind === 'ready'
-      ? Math.min(stage.analysis.cols, PREVIEW_COLS)
+      ? Math.min(stage.analysis.cols, PREVIEW.fields)
       : built?.records === shown.records ? built.cols : widest(shown.records);
     if (!built || built.records !== shown.records || built.header !== session.header || built.cols !== cols) {
       built = buildTable(refs.table, shown.records, session.header, cols);
@@ -387,7 +385,7 @@ function renderPreviewNote(refs, analysis, header) {
   const parts = [shownRows < dataRows
     ? `先頭の${formatCount(shownRows)}行を表示（データは全${formatCount(dataRows)}行）`
     : `データ${formatCount(dataRows)}行をすべて表示`];
-  if (analysis.cols > PREVIEW_COLS) parts.push(`先頭の${formatCount(PREVIEW_COLS)}列まで（全${formatCount(analysis.cols)}列）`);
+  if (analysis.cols > PREVIEW.fields) parts.push(`先頭の${formatCount(PREVIEW.fields)}列まで（全${formatCount(analysis.cols)}列）`);
   setText(refs.previewNote, parts.join('・'));
 }
 
@@ -500,8 +498,8 @@ function buildTable(table, records, header, cols) {
       const td = document.createElement('td');
       const text = record[col];
       if (text) {
-        const cut = text.length > PREVIEW_CHARS;
-        td.textContent = cut ? text.slice(0, PREVIEW_CHARS) : text;
+        const cut = text.length > PREVIEW.chars;
+        td.textContent = cut ? text.slice(0, PREVIEW.chars) : text;
         const kind = classify(text);
         const notes = [];
         if (kind !== null) {
@@ -510,7 +508,7 @@ function buildTable(table, records, header, cols) {
         }
         if (cut) {
           td.classList.add('is-cut');
-          notes.push(`長い値のため、先頭の${formatCount(PREVIEW_CHARS)}文字だけを表示しています`);
+          notes.push(`長い値のため、先頭の${formatCount(PREVIEW.chars)}文字だけを表示しています`);
         }
         if (notes.length > 0) td.title = notes.join('\n');
       }
@@ -574,7 +572,7 @@ function total(risks) {
 function widest(records) {
   let cols = 0;
   for (const record of records) cols = Math.max(cols, record.length);
-  return Math.min(cols, PREVIEW_COLS);
+  return Math.min(cols, PREVIEW.fields);
 }
 
 /** @param {HTMLElement} bar @param {HTMLElement} label @param {number} ratio */

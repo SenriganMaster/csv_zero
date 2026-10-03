@@ -3,6 +3,7 @@
 import { detectEncoding, decodeText, SNIFF_BYTES } from './text.js';
 import { createCsvReader, detectDelimiter, csvRecord, detach, isBlank } from './csv.js';
 import { classify, displayWidth, noRisks, planSheet, sheetName, LIMITS } from './excel.js';
+import { PREVIEW } from './preview.js';
 import { writeXlsx } from './xlsx.js';
 
 /** @import { Encoding, EncodingVerdict } from './text.js' */
@@ -41,8 +42,6 @@ import { writeXlsx } from './xlsx.js';
  */
 /** @typedef {'xlsx' | 'csv'} Format */
 /** @typedef {{ blob: Blob, name: string }} OutputFile */
-
-export const PREVIEW = Object.freeze({ records: 101, fields: 200, chars: 1000, budget: 1_000_000 });
 
 const UTF8_BOM = Uint8Array.of(0xef, 0xbb, 0xbf);
 
