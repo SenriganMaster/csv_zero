@@ -21,7 +21,7 @@ addEventListener('message', function (event) {
 </html>`;
 
 test('embed mode posts a height that grows and does not shrink', async ({ page }) => {
-  // Chrome blocks a public origin such as parent.test from framing 127.0.0.1 (Private Network Access).
+  // Chrome blocks a public origin such as parent.test from framing 127.0.0.1 (Local Network Access).
   // Another loopback port is still a different origin, so postMessage crosses a real origin boundary.
   const parent = await listen(PARENT);
   try {
