@@ -14,6 +14,7 @@
     "test:unit": "node scripts/test-unit.mjs",
     "test:e2e": "playwright test",
     "test": "npm run typecheck && npm run test:unit && npm run test:e2e",
+    "perf": "node scripts/perf.mjs",
     "screens": "node scripts/screens.mjs"
   },
   "devDependencies": {
