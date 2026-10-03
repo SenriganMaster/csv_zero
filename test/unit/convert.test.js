@@ -134,6 +134,14 @@ describe('analyze', () => {
     assert.equal((await analysisOf(memorySource('a,b\n\n1,2\n'))).ragged, null);
   });
 
+  test('column statistics stop at 16,384 columns, while cols and cell issues cover every column', async () => {
+    const bytes = Buffer.concat([Buffer.from('0001,'.repeat(20_000)), Buffer.from([0xff, 0x0a])]);
+    const read = await analyze(memorySource(bytes), { encoding: 'utf-8', delimiter: ',' }, HOOKS);
+    assert.ok(read.ok);
+    assert.deepEqual([read.value.cols, read.value.columns.length], [20_001, 16_384]);
+    assert.deepEqual(read.value.replaced, { count: 1, row: 0, col: 20_000 });
+  });
+
   test('preview keeps 101 records of 200 fields of 1,000 characters', async () => {
     const rows = Array.from({ length: 300 }, (_, row) => Array.from({ length: 250 }, (_, col) => `r${row}c${col}`));
     rows[0][0] = 'x'.repeat(5000);

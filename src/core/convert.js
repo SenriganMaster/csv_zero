@@ -35,7 +35,7 @@ import { writeXlsx } from './xlsx.js';
  *   rows: number, cols: number, columns: ColumnStats[],
  *   overlong: CellIssue | null, replaced: CellIssue | null,
  *   ragged: { count: number, row: number } | null, unterminatedQuoteRow: number | null,
- * }} Analysis
+ * }} Analysis  columns stops at LIMITS.cols, the columns Excel opens. cols counts them all.
  */
 /** @typedef {'xlsx' | 'csv'} Format */
 /** @typedef {{ blob: Blob, name: string }} OutputFile */
@@ -144,13 +144,16 @@ function createTally(shown) {
   /** @type {CellIssue} */
   const replaced = { count: 0, row: 0, col: 0 };
   let rows = 0;
+  let cols = 0;
   let previewChars = 0;
 
   return {
     /** @param {string[]} record */
     add(record) {
       const row = rows++;
-      while (columns.length < record.length) columns.push({ width: 0, risks: noRisks(), row0: { risk: null } });
+      cols = Math.max(cols, record.length);
+      const counted = Math.min(record.length, LIMITS.cols);
+      while (columns.length < counted) columns.push({ width: 0, risks: noRisks(), row0: { risk: null } });
       if (!isBlank(record)) {
         const shape = shapes.get(record.length);
         if (shape) shape.count++;
@@ -159,13 +162,14 @@ function createTally(shown) {
       for (let col = 0; col < record.length; col++) {
         const text = record[col];
         if (text === '') continue;
+        if (text.length > LIMITS.cellChars) note(overlong, row, col);
+        if (text.includes('\uFFFD')) note(replaced, row, col);
+        if (col >= counted) continue;
         const stats = columns[col];
         const risk = classify(text);
         if (row === 0) stats.row0.risk = risk;
         else if (risk !== null) stats.risks[risk]++;
         if (2 * text.length > stats.width) stats.width = Math.max(stats.width, displayWidth(text));
-        if (text.length > LIMITS.cellChars) note(overlong, row, col);
-        if (text.includes('\uFFFD')) note(replaced, row, col);
       }
       if (shown.length < PREVIEW.records && previewChars < PREVIEW.budget) {
         const fields = record.slice(0, PREVIEW.fields).map((field) => detach(field.slice(0, PREVIEW.chars)));
@@ -178,7 +182,7 @@ function createTally(shown) {
     /** @param {boolean} damaged */
     result: (damaged) => ({
       rows,
-      cols: columns.length,
+      cols,
       columns,
       overlong: overlong.count > 0 ? overlong : null,
       replaced: damaged && replaced.count > 0 ? replaced : null,
