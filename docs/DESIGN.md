@@ -93,9 +93,9 @@ The rules run in order and the first match decides. Rules 1-7 run whatever the c
 | 9 | replacements are at most 1 % of the bytes at 80 or above | utf-8 with damage, followed by `DECODE_REPLACED` |
 | 10 | otherwise | shift_jis (WHATWG Shift_JIS is CP932) |
 
-"Replacements" means U+FFFD characters in the decoder output minus the `EF BF BD` sequences in the input, because a file may contain a correctly encoded U+FFFD (cross-judge finding). The byte count carries the last two bytes of a slice so a sequence split across slices still counts once. The same subtraction applies wherever the read counts damaged cells.
+"Replacements" means U+FFFD characters in the decoder output minus the `EF BF BD` sequences in the input, because a file may contain a correctly encoded U+FFFD (cross-judge finding). The byte count carries the last two bytes of a slice so a sequence split across slices still counts once. The read reports the same count as `DECODE_REPLACED`, located at the first cell holding U+FFFD.
 
-CP932 text is almost never valid UTF-8, because its lead bytes 81-9F are UTF-8 continuation bytes (inferred from the byte ranges). Rule 9 exists because UTF-8 Japanese usually decodes as Shift_JIS without a single error, as mojibake, so one damaged byte must not send a UTF-8 file to rule 10 (inferred the same way). TextDecoder strips a BOM that matches its encoding. Undecodable bytes become U+FFFD, and the read counts the cells that contain one.
+CP932 text is almost never valid UTF-8, because its lead bytes 81-9F are UTF-8 continuation bytes (inferred from the byte ranges). Rule 9 exists because UTF-8 Japanese usually decodes as Shift_JIS without a single error, as mojibake, so one damaged byte must not send a UTF-8 file to rule 10 (inferred the same way). TextDecoder strips a BOM that matches its encoding. Undecodable bytes become U+FFFD.
 
 The encoding select offers 自動, UTF-8, Shift_JIS, EUC-JP, UTF-16LE and UTF-16BE. EUC-JP is never auto-detected, because EUC-JP bytes usually decode as valid Shift_JIS mojibake. It is a manual escape hatch that costs one `TextDecoder` label. Pasted text is already Unicode, so the select is disabled for a paste.
 
