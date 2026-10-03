@@ -250,7 +250,7 @@ Errors are values of `AppError` in `messages.js`. Only `describe()` words them, 
 | OUTPUT_TOO_LARGE | a zip size or offset reaches 4 GiB | 作成するxlsxが4GBを超えるため保存できません。ファイルを分けてお試しください。 |
 | DECODE_REPLACED | undecodable characters (the decoder's count), and the first cell with U+FFFD, warning | 文字コードを正しく読めなかった文字が{count}文字あります（最初: {row}行目・{col}列）。文字コードを切り替えると直ることがあります。 |
 | UNTERMINATED_QUOTE | EOF inside quotes, warning | {row}行目で始まる引用符（"）が閉じられていません。ファイルの最後までを1つのセルとして読み込みました。 |
-| RAGGED_ROWS | records whose field count differs from the most common one, warning | ほかの行と列の数が違う行が{count}行あります（最初: {row}行目）。足りない列は空欄にします。 |
+| RAGGED_ROWS | records whose field count differs from the most common one, warning | ほかの行と列の数が違う行が{count}行あります（最初: {row}行目）。足りない列は空欄として扱います。 |
 | SINGLE_COLUMN | delimiter rule 2, info | 区切り文字が見つからなかったため、1列のデータとして読み込みました。必要なら区切り文字を選び直してください。 |
 
 There is no warning for 自動 columns, because `autoNumber` only converts values whose display does not change.

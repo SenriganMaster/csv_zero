@@ -74,7 +74,7 @@ export function describe(error) {
     case 'UNTERMINATED_QUOTE':
       return `${rowName(error.row)}で始まる引用符（"）が閉じられていません。ファイルの最後までを1つのセルとして読み込みました。`;
     case 'RAGGED_ROWS':
-      return `ほかの行と列の数が違う行が${formatCount(error.count)}行あります（最初: ${rowName(error.row)}）。足りない列は空欄にします。`;
+      return `ほかの行と列の数が違う行が${formatCount(error.count)}行あります（最初: ${rowName(error.row)}）。足りない列は空欄として扱います。`;
     case 'SINGLE_COLUMN':
       return '区切り文字が見つからなかったため、1列のデータとして読み込みました。必要なら区切り文字を選び直してください。';
     default:

@@ -20,7 +20,7 @@ test('describe words every code, with Excel row numbers and column letters', () 
     [{ code: 'OUTPUT_TOO_LARGE' }, '作成するxlsxが4GBを超えるため保存できません。ファイルを分けてお試しください。'],
     [{ code: 'DECODE_REPLACED', count: 1234, row: 9, col: 0 }, '文字コードを正しく読めなかった文字が1,234文字あります（最初: 10行目・A列）。文字コードを切り替えると直ることがあります。'],
     [{ code: 'UNTERMINATED_QUOTE', row: 2 }, '3行目で始まる引用符（"）が閉じられていません。ファイルの最後までを1つのセルとして読み込みました。'],
-    [{ code: 'RAGGED_ROWS', count: 2, row: 1 }, 'ほかの行と列の数が違う行が2行あります（最初: 2行目）。足りない列は空欄にします。'],
+    [{ code: 'RAGGED_ROWS', count: 2, row: 1 }, 'ほかの行と列の数が違う行が2行あります（最初: 2行目）。足りない列は空欄として扱います。'],
     [{ code: 'SINGLE_COLUMN' }, '区切り文字が見つからなかったため、1列のデータとして読み込みました。必要なら区切り文字を選び直してください。'],
   ];
   for (const [error, sentence] of cases) assert.equal(describe(error), sentence, error.code);
