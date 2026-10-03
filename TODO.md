@@ -4,9 +4,9 @@
 
 ## csv-zero v1
 
-- [x] セッション開始（TODO.md / progress_log.txt / decisions.tsv / .gitignore） (作業中)
-- [ ] 設計: architect（3案を並列比較）でデータ形状・worker プロトコル・モジュール構成を確定
-- [ ] 足場: package.json / esbuild ビルド / 静的サーバ / スクリーンショットスクリプト
+- [x] セッション開始（TODO.md / progress_log.txt / decisions.tsv / .gitignore） (2026-10-03 完了)
+- [x] 設計: architect（3案を並列比較）でデータ形状・worker プロトコル・モジュール構成を確定 (作業中)
+- [x] 足場: package.json / esbuild ビルド / 静的サーバ / スクリーンショットスクリプト (2026-10-03 完了)
 - [ ] コアエンジン: 文字コード判定・区切り判定・RFC 4180 パーサ・Excel崩れ判定・xlsx / CSV 書き出し + 単体テスト
 - [ ] UI: index.html / styles.css / main.js / worker.js、埋め込みモード、SEO 本文、JSON-LD、CSP
 - [ ] アセット: favicon（SVG + PNG）、OGP 画像 1200x630
