@@ -148,7 +148,7 @@ describe('analyze', () => {
     assert.deepEqual(read.value.replaced, { count: 1, row: 0, col: 20_000 });
   });
 
-  test('preview keeps 101 records of 200 fields of 1,000 characters', async () => {
+  test('preview keeps 101 records of 200 fields, and 1,001 characters of a longer field', async () => {
     const rows = Array.from({ length: 300 }, (_, row) => Array.from({ length: 250 }, (_, col) => `r${row}c${col}`));
     rows[0][0] = 'x'.repeat(5000);
     let previews = 0;
@@ -157,7 +157,7 @@ describe('analyze', () => {
     assert.deepEqual([previews, read.value.rows, read.value.cols], [1, 300, 250]);
     assert.equal(read.value.records.length, 101);
     assert.ok(read.value.records.every((record) => record.length === 200));
-    assert.deepEqual([read.value.records[0][0], read.value.records[100][199]], ['x'.repeat(1000), 'r100c199']);
+    assert.deepEqual([read.value.records[0][0], read.value.records[100][199]], ['x'.repeat(1001), 'r100c199']);
   });
 
   test('preview stops adding records once it holds 1,000,000 characters', async () => {

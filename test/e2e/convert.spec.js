@@ -113,3 +113,13 @@ test('Enter on the drop zone opens the file chooser', async ({ page }) => {
   const dialog = await chooser;
   expect(await dialog.element().getAttribute('data-testid')).toBe('file-input');
 });
+
+test('a cell over 1,000 characters shows its first 1,000 and is marked as cut', async ({ page }) => {
+  await openApp(page);
+  const buffer = Buffer.from(`名前,メモ\r\n山田,${'あ'.repeat(5000)}\r\n`);
+  await page.locator('[data-testid="file-input"]').setInputFiles({ name: 'long.csv', mimeType: 'text/csv', buffer });
+  await page.locator('[data-testid="tool"][data-phase="ready"]').waitFor();
+  const cell = page.locator('[data-testid="preview"] tbody td').nth(1);
+  expect(await cell.textContent()).toBe('あ'.repeat(1000));
+  await expect(cell).toHaveClass(/\bis-cut\b/);
+});

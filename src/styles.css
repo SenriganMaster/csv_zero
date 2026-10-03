@@ -1215,6 +1215,11 @@ a:hover {
   box-shadow: inset 2px 0 0 var(--warn-mark);
 }
 
+.grid td.is-cut::after {
+  content: '…';
+  color: var(--text-3);
+}
+
 .grid td.num {
   text-align: right;
 }

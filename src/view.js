@@ -10,8 +10,9 @@ import { describe, RISK_LABELS, encodingLabel, delimiterLabel, formatCount, form
 /** @import { EncodingVerdict } from './core/text.js' */
 
 const PREVIEW_ROWS = 100;
-/** PREVIEW.fields in core/convert.js, which stays out of the main bundle. */
+/** PREVIEW.fields and PREVIEW.chars in core/convert.js, which stays out of the main bundle. */
 const PREVIEW_COLS = 200;
+const PREVIEW_CHARS = 1000;
 
 const RISK_KINDS = /** @type {RiskKind[]} */ (Object.keys(RISK_LABELS));
 const MODE_TITLE = '自動: 先頭に0が付いていない普通の数値だけを数値として保存します。0001 のような値は文字列のまま残ります。';
@@ -499,12 +500,19 @@ function buildTable(table, records, header, cols) {
       const td = document.createElement('td');
       const text = record[col];
       if (text) {
-        td.textContent = text;
+        const cut = text.length > PREVIEW_CHARS;
+        td.textContent = cut ? text.slice(0, PREVIEW_CHARS) : text;
         const kind = classify(text);
+        const notes = [];
         if (kind !== null) {
-          td.className = 'is-risk';
-          td.title = `Excelで直接開くと: ${RISK_LABELS[kind].label}`;
+          td.classList.add('is-risk');
+          notes.push(`Excelで直接開くと: ${RISK_LABELS[kind].label}`);
         }
+        if (cut) {
+          td.classList.add('is-cut');
+          notes.push(`長い値のため、先頭の${formatCount(PREVIEW_CHARS)}文字だけを表示しています`);
+        }
+        if (notes.length > 0) td.title = notes.join('\n');
       }
       tr.append(td);
     }

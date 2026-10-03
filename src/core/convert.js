@@ -19,7 +19,8 @@ import { writeXlsx } from './xlsx.js';
  */
 /**
  * Display only: PREVIEW.records records, fewer once they hold PREVIEW.budget characters, at least one.
- * Each keeps PREVIEW.fields fields of PREVIEW.chars characters.
+ * Each keeps PREVIEW.fields fields. A longer field than PREVIEW.chars keeps one character more, which tells the view
+ * to mark it as cut.
  * @typedef {{ settings: ParseSettings, detected: Detected, records: string[][] }} Preview
  */
 /**
@@ -173,7 +174,7 @@ function createTally(shown) {
         if (2 * text.length > stats.width) stats.width = Math.max(stats.width, displayWidth(text));
       }
       if (shown.length < PREVIEW.records && previewChars < PREVIEW.budget) {
-        const fields = record.slice(0, PREVIEW.fields).map((field) => detach(field.slice(0, PREVIEW.chars)));
+        const fields = record.slice(0, PREVIEW.fields).map((field) => detach(field.slice(0, PREVIEW.chars + 1)));
         for (const field of fields) previewChars += field.length;
         shown.push(fields);
       }
