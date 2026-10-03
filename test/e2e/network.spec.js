@@ -16,7 +16,6 @@ test('loaded page stays on the local origin', async ({ page }) => {
   });
 
   await page.goto('/');
-  await page.waitForSelector('body[data-worker-ready="1"]');
 
   expect(urls).toContain('http://127.0.0.1:4173/');
   expect(urls.map((url) => new URL(url).origin)).toEqual(
@@ -24,7 +23,6 @@ test('loaded page stays on the local origin', async ({ page }) => {
   );
   expect(consoleErrors).toEqual([]);
   expect(pageErrors).toEqual([]);
-  expect(await page.locator('body').getAttribute('data-worker-ready')).toBe('1');
 });
 
 const ORIGIN = 'http://127.0.0.1:4173';
@@ -51,7 +49,6 @@ test('a full conversion makes no third-party request', async ({ page, context })
   });
 
   await page.goto('/');
-  await page.locator('body[data-worker-ready="1"]').waitFor();
   await page.locator('[data-testid="file-input"]').setInputFiles(fixturePath('utf8-plain.csv'));
   await page.locator('[data-testid="tool"][data-phase="ready"]').waitFor();
   await clickDownload(page, 'download-xlsx');

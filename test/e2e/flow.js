@@ -14,7 +14,6 @@ export function fixturePath(name) {
 /** @param {import('@playwright/test').Page} page */
 export async function openApp(page) {
   await page.goto('/');
-  await page.locator('body[data-worker-ready="1"]').waitFor();
 }
 
 /** @param {import('@playwright/test').Page} page @param {string} name */

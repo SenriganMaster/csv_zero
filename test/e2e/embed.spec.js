@@ -30,7 +30,6 @@ test('embed mode posts a height that grows and does not shrink', async ({ page }
     await expect(frame.locator('html')).toHaveAttribute('data-embed', '1');
     await expect(frame.locator('.site-header')).toBeHidden();
     await expect(frame.locator('.seo')).toBeHidden();
-    await frame.locator('body[data-worker-ready="1"]').waitFor();
     await page.waitForFunction(() => window.heights.some((height) => height > 300));
     const before = await page.evaluate(() => window.heights.slice());
     await frame.locator('[data-testid="file-input"]').setInputFiles(fixturePath('sjis-bank.csv'));

@@ -8,30 +8,7 @@ import { findRefs, render, selectTab, showDrag } from './view.js';
 /** @import { JobRequest, ReadRequest, WriteRequest, EventFor } from './protocol.js' */
 /** @import { Refs } from './view.js' */
 
-// Only valid during the synchronous run of a classic script; the worker URL is resolved against it.
-const current = document.currentScript;
-if (!(current instanceof HTMLScriptElement)) {
-  throw new Error('main bundle must be a classic script');
-}
-const bundleUrl = current.src;
-
-/**
- * @param {string} base
- * @returns {Promise<string>}
- */
-async function preloadWorker(base) {
-  const url = new URL(__WORKER_FILE__, base).href;
-  try {
-    const response = await fetch(url);
-    if (!response.ok) return url;
-    const script = await response.blob();
-    const blobUrl = URL.createObjectURL(new Blob([script], { type: 'text/javascript' }));
-    document.body.dataset.workerReady = '1';
-    return blobUrl;
-  } catch {
-    return url;
-  }
-}
+const workerUrl = Promise.resolve(URL.createObjectURL(new Blob([__WORKER_SOURCE__], { type: 'text/javascript' })));
 
 /**
  * @template {JobRequest} R
@@ -333,7 +310,7 @@ function setupCopy() {
 }
 
 const refs = findRefs(document, objectUrl);
-const store = createStore(initialSession({ xlsx: typeof CompressionStream === 'function' }), refs, preloadWorker(bundleUrl));
+const store = createStore(initialSession({ xlsx: typeof CompressionStream === 'function' }), refs, workerUrl);
 bindEvents(refs, store);
 render(store.current(), refs);
 setupEmbed();

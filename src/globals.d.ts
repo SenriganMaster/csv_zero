@@ -1,1 +1,1 @@
-declare const __WORKER_FILE__: string;
+declare const __WORKER_SOURCE__: string;

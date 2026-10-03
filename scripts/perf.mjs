@@ -25,7 +25,6 @@ function mib(bytes) {
 async function runCase(page, origin, dataRows) {
   const csv = writeBenchCsv(path.join(workDir, `bench-${dataRows}.csv`), dataRows);
   await page.goto(origin);
-  await page.locator('body[data-worker-ready="1"]').waitFor();
   await installMeters(page);
   const readyMs = await timeUntilReady(page, csv.path, 240_000);
   const reportedRows = Number((await page.locator('[data-stat="rows"]').innerText()).replaceAll(',', ''));

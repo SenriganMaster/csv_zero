@@ -7,7 +7,6 @@ test('a 20MB csv reaches ready and xlsx without a long frame gap', async ({ page
   test.setTimeout(180_000);
   const csv = writeBenchCsv(path.join(workDir, 'bench-200000.csv'), 200_000);
   await page.goto('/');
-  await page.locator('body[data-worker-ready="1"]').waitFor();
   await installMeters(page);
   const readyMs = await timeUntilReady(page, csv.path, 90_000);
   const xlsx = await timedDownload(page, 'download-xlsx', 120_000);

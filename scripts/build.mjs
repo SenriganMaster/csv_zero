@@ -64,10 +64,9 @@ async function main() {
   fs.rmSync(deployDir, { recursive: true, force: true });
   fs.mkdirSync(deployDir, { recursive: true });
 
-  const workerOut = await bundleJs('src/worker.js', 'worker-[hash]', assetsDir);
-  const workerBase = path.basename(workerOut);
+  const worker = await esbuild.build({ ...jsBuild, entryPoints: ['src/worker.js'], write: false });
   const mainOut = await bundleJs('src/main.js', 'main-[hash]', assetsDir, {
-    __WORKER_FILE__: JSON.stringify(workerBase),
+    __WORKER_SOURCE__: JSON.stringify(worker.outputFiles[0].text),
   });
   const cssResult = await esbuild.build({
     absWorkingDir: root,
