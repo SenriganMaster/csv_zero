@@ -80,7 +80,7 @@ export async function installMeters(page) {
     const observer = new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) longtasks.push(entry.duration);
     });
-    observer.observe({ type: 'longtask', buffered: true });
+    observer.observe({ type: 'longtask' });
     window.__csvZeroMeters = { gaps, longtasks };
   });
 }
