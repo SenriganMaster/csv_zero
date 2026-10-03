@@ -28,6 +28,7 @@ async function run(request) {
       post(result.ok ? { type: 'done', file: result.value } : { type: 'failed', error: result.error });
     }
   } catch (error) {
+    console.error(error);
     post({ type: 'failed', error: unexpected(error) });
   }
 }

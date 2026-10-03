@@ -58,6 +58,7 @@ function runJob(workerUrl, request, onEvent) {
   const fail = (detail) => {
     if (!live) return;
     stop();
+    console.error(detail);
     onEvent(/** @type {EventFor<R>} */ ({ type: 'failed', error: { code: 'WORKER_FAILED', detail } }));
   };
   void workerUrl.then((url) => {

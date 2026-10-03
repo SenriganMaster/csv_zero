@@ -106,7 +106,8 @@ describe('write job', () => {
 });
 
 describe('unexpected exceptions', () => {
-  test('a file that grew after it was chosen is READ_FAILED', async () => {
+  test('a file that grew after it was chosen is READ_FAILED', async (t) => {
+    t.mock.method(console, 'error', () => {});
     const path = new URL('../../.work/core/worker-edited.csv', import.meta.url);
     fs.mkdirSync(new URL('.', path), { recursive: true });
     fs.writeFileSync(path, 'a,b\r\n');
@@ -121,7 +122,8 @@ describe('unexpected exceptions', () => {
     }
   });
 
-  test('map to AppError values', async () => {
+  test('map to AppError values and leave the exception in the console', async (t) => {
+    const logged = t.mock.method(console, 'error', () => {});
     /** Stands in for failures no real file can be made to cause. @param {unknown} error */
     const failing = (error) => ({ size: 1, slice: () => ({ arrayBuffer: () => Promise.reject(error) }) });
     /** @type {[unknown, object][]} */
@@ -136,5 +138,6 @@ describe('unexpected exceptions', () => {
       const source = { kind: 'file', blob: failing(error), name: 'x.csv' };
       assert.deepEqual(await runJob({ type: 'read', source, choice: AUTO }), [{ type: 'failed', error: expected }]);
     }
+    assert.deepEqual(logged.mock.calls.map((call) => call.arguments[0]), cases.map(([error]) => error));
   });
 });
