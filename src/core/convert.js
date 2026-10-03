@@ -36,6 +36,7 @@ import { writeXlsx } from './xlsx.js';
  *   overlong: CellIssue | null, replaced: CellIssue | null,
  *   ragged: { count: number, row: number } | null, unterminatedQuoteRow: number | null,
  * }} Analysis  columns stops at LIMITS.cols, the columns Excel opens. cols counts them all.
+ *   replaced.count counts undecodable characters, and its row and col are the first cell holding U+FFFD.
  */
 /** @typedef {'xlsx' | 'csv'} Format */
 /** @typedef {{ blob: Blob, name: string }} OutputFile */
@@ -76,7 +77,7 @@ export async function analyze(source, choice, hooks) {
   }
   if (tally.rows() === 0) return { ok: false, error: { code: 'EMPTY_FILE' } };
   if (!previewed) hooks.onPreview(preview);
-  return { ok: true, value: { ...preview, ...tally.result(next.value.damaged), unterminatedQuoteRow: next.value.unterminatedQuoteRow } };
+  return { ok: true, value: { ...preview, ...tally.result(next.value.damage), unterminatedQuoteRow: next.value.unterminatedQuoteRow } };
 }
 
 /**
@@ -103,8 +104,8 @@ export async function write(format, source, analysis, options, onProgress) {
  * @param {Blob} blob
  * @param {ParseSettings} settings
  * @param {(ratio: number) => void} onProgress  Bytes read divided by blob.size.
- * @returns {AsyncGenerator<string[][], { unterminatedQuoteRow: number | null, damaged: boolean }, void>}
- *   damaged: the decoder replaced undecodable bytes with U+FFFD.
+ * @returns {AsyncGenerator<string[][], { unterminatedQuoteRow: number | null, damage: number }, void>}
+ *   damage: how many U+FFFD the decoder wrote for undecodable bytes.
  */
 async function* recordBatches(blob, settings, onProgress) {
   const reader = createCsvReader(settings.delimiter);
@@ -116,7 +117,7 @@ async function* recordBatches(blob, settings, onProgress) {
   }
   const { records, unterminatedQuoteRow } = reader.finish();
   if (records.length > 0) yield records;
-  return { unterminatedQuoteRow, damaged: next.value > 0 };
+  return { unterminatedQuoteRow, damage: next.value };
 }
 
 /**
@@ -179,13 +180,13 @@ function createTally(shown) {
     },
     previewFull: () => shown.length === PREVIEW.records || previewChars >= PREVIEW.budget,
     rows: () => rows,
-    /** @param {boolean} damaged */
-    result: (damaged) => ({
+    /** @param {number} damage  The decoder's count, which leaves out correctly encoded U+FFFD. */
+    result: (damage) => ({
       rows,
       cols,
       columns,
       overlong: overlong.count > 0 ? overlong : null,
-      replaced: damaged && replaced.count > 0 ? replaced : null,
+      replaced: damage > 0 && replaced.count > 0 ? { ...replaced, count: damage } : null,
       ragged: raggedRecords(shapes),
     }),
   };

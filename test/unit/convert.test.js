@@ -102,15 +102,21 @@ describe('analyze', () => {
     assert.deepEqual(analysis.columns.map((column) => column.width), [6, 10]);
   });
 
-  test('forced UTF-8 on Shift_JIS reports the cells with U+FFFD', async () => {
+  test('forced UTF-8 on Shift_JIS counts every undecodable character, as Python does, and finds the first cell', async () => {
     const analysis = await analysisOf(fileSource('sjis-bank.csv'), { encoding: 'utf-8', delimiter: 'auto' });
-    assert.deepEqual(summary(analysis), { ...detected('utf-8', false, false, ','), rows: 31, cols: 12, ...CLEAN, replaced: { count: 149, row: 0, col: 0 } });
+    assert.deepEqual(summary(analysis), { ...detected('utf-8', false, false, ','), rows: 31, cols: 12, ...CLEAN, replaced: { count: 751, row: 0, col: 0 } });
   });
 
   test('a correctly encoded U+FFFD is not damage', async () => {
     const analysis = await analysisOf(memorySource('名前,記号\r\n山田,\uFFFD\r\n'));
     assert.equal(analysis.replaced, null);
     assert.deepEqual(analysis.records[1], ['山田', '\uFFFD']);
+  });
+
+  test('a correctly encoded U+FFFD next to one undecodable byte counts one', async () => {
+    const bytes = Buffer.concat([Buffer.from('名前,記号\r\n山田,\uFFFD\r\n佐藤,'), Buffer.from([0xff, 0x0d, 0x0a])]);
+    const analysis = await analysisOf(memorySource(bytes), { encoding: 'utf-8', delimiter: 'auto' });
+    assert.deepEqual(analysis.replaced, { count: 1, row: 1, col: 1 });
   });
 
   test('a forced delimiter is used as is, with no SINGLE_COLUMN', async () => {

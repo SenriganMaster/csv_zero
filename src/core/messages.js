@@ -70,7 +70,7 @@ export function describe(error) {
     case 'OUTPUT_TOO_LARGE':
       return '作成するxlsxが4GBを超えるため保存できません。ファイルを分けてお試しください。';
     case 'DECODE_REPLACED':
-      return `文字コードを正しく読めなかった文字が${formatCount(error.count)}か所あります（最初: ${cellName(error)}）。文字コードを切り替えると直ることがあります。`;
+      return `文字コードを正しく読めなかった文字が${formatCount(error.count)}文字あります（最初: ${cellName(error)}）。文字コードを切り替えると直ることがあります。`;
     case 'UNTERMINATED_QUOTE':
       return `${rowName(error.row)}で始まる引用符（"）が閉じられていません。ファイルの最後までを1つのセルとして読み込みました。`;
     case 'RAGGED_ROWS':
