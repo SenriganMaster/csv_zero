@@ -5,8 +5,13 @@ import { assertTextWorkbook, readWorkbook } from './book.js';
 import { downloadBytes, openApp, statText, uploadFixture } from './flow.js';
 import { delimiterFromLabel, encodingFromLabel } from './records.js';
 
-/** @type {Record<string, [string, boolean]>} */
-const REPORTED = { cp932: ['shift_jis', false], 'utf-8-sig': ['utf-8', true], 'utf-8': ['utf-8', false], 'utf-16': ['utf-16le', true] };
+/** @type {Record<string, { encoding: string, bom: boolean }>} */
+const REPORTED = {
+  cp932: { encoding: 'shift_jis', bom: false },
+  'utf-8-sig': { encoding: 'utf-8', bom: true },
+  'utf-8': { encoding: 'utf-8', bom: false },
+  'utf-16': { encoding: 'utf-16le', bom: true },
+};
 
 test.skip(!hasPython, 'python3 is missing');
 
@@ -15,7 +20,7 @@ for (const [name, codec, delimiter] of CONVERTIBLE) {
     await openApp(page);
     await uploadFixture(page, name);
     const encoding = await statText(page, 'encoding');
-    expect([encodingFromLabel(encoding), encoding.endsWith('（BOM付き）')]).toEqual(REPORTED[codec]);
+    expect({ encoding: encodingFromLabel(encoding), bom: encoding.endsWith('（BOM付き）') }).toEqual(REPORTED[codec]);
     expect(delimiterFromLabel(await statText(page, 'delimiter'))).toBe(delimiter);
     const records = sheetRecords(fixture(name), codec, delimiter);
     const rows = Number((await statText(page, 'rows')).replaceAll(',', ''));
