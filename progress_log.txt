@@ -11,3 +11,7 @@
                       変更: 「自動」列は表示が変わらない数値だけ数値化（AUTO_CHANGES 警告は廃止）、埋め込み判定はインラインスクリプト + CSP ハッシュ。
                       契約スタブ（src/core/*.js、src/protocol.js）を追加し、型検査は通過。コミット: 9946590 / 8ae16a5 / 0c39618
 2026-10-03 23:45 JST  並列作業を開始: コアエンジン担当、UI 担当（どちらも Opus）、ツール担当（Grok、実行中）。
+2026-10-03 23:50 JST  ツール担当が完了。ビルドの --out と CSP ハッシュ（scripts/html.mjs の finalizeHtml）、Node 20/24 両対応の単体テスト実行、
+                      .htaccess、deploy.yml（main への push のみ、FTPS 3 回試行）、ci.yml（pull_request）。
+                      検証: build/serve の単体テスト 8 件成功、--out への出力成功、--out . と --out ../x は拒否。
+                      コミット: 2a61a94 / 22559d3 / fe3a200 / 4165607 / 52cd1d3
