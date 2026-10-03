@@ -1,12 +1,352 @@
+/** Main-thread entry: boot, the job runner, the session store and every DOM event. It never reads file bytes. */
+
+import { initialSession, update } from './core/session.js';
+import { findRefs, render, selectTab, showDrag } from './view.js';
+
+/** @import { Session, Msg, Effect } from './core/session.js' */
+/** @import { Format, OutputFile, Source } from './core/convert.js' */
+/** @import { Encoding } from './core/text.js' */
+/** @import { Delimiter } from './core/csv.js' */
+/** @import { JobRequest, ReadRequest, WriteRequest, EventFor } from './protocol.js' */
+/** @import { Refs } from './view.js' */
+
+// Only valid during the synchronous run of a classic script; the worker URL is resolved against it.
 const current = document.currentScript;
 if (!(current instanceof HTMLScriptElement)) {
   throw new Error('main bundle must be a classic script');
 }
+const bundleUrl = current.src;
 
-const worker = new Worker(new URL(__WORKER_FILE__, current.src));
-worker.addEventListener('message', (event) => {
-  if (event.data?.type === 'pong') {
+/**
+ * Fetches the worker script once at boot and serves it from a blob: URL, so jobs still start after the network
+ * drops. Falls back to the plain URL when the fetch fails.
+ * @param {string} base
+ * @returns {Promise<string>}
+ */
+async function preloadWorker(base) {
+  const url = new URL(__WORKER_FILE__, base).href;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return url;
+    const script = await response.blob();
+    const blobUrl = URL.createObjectURL(new Blob([script], { type: 'text/javascript' }));
     document.body.dataset.workerReady = '1';
+    return blobUrl;
+  } catch {
+    return url;
   }
-});
-worker.postMessage({ type: 'ping' });
+}
+
+/**
+ * Runs one job in a fresh worker. Events stop after the terminal event or cancel(), and the worker is terminated.
+ * A worker `error` event arrives as { type: 'failed', error: { code: 'WORKER_FAILED', detail } }.
+ * @template {JobRequest} R
+ * @param {Promise<string>} workerUrl
+ * @param {R} request
+ * @param {(event: EventFor<R>) => void} onEvent
+ * @returns {{ cancel(): void }}
+ */
+function runJob(workerUrl, request, onEvent) {
+  let live = true;
+  /** @type {Worker | null} */
+  let worker = null;
+  const stop = () => {
+    live = false;
+    worker?.terminate();
+  };
+  /** @param {string} detail */
+  const fail = (detail) => {
+    if (!live) return;
+    stop();
+    onEvent(/** @type {EventFor<R>} */ ({ type: 'failed', error: { code: 'WORKER_FAILED', detail } }));
+  };
+  void workerUrl.then((url) => {
+    if (!live) return;
+    try {
+      worker = new Worker(url);
+    } catch (error) {
+      fail(error instanceof Error ? error.message : String(error));
+      return;
+    }
+    worker.addEventListener('message', (message) => {
+      if (!live) return;
+      const event = /** @type {EventFor<R>} */ (message.data);
+      if (event.type === 'done' || event.type === 'failed') stop();
+      onEvent(event);
+    });
+    worker.addEventListener('error', (error) => {
+      error.preventDefault();
+      fail(error.message || 'worker error');
+    });
+    worker.addEventListener('messageerror', () => fail('messageerror'));
+    worker.postMessage(request);
+  });
+  return { cancel: stop };
+}
+
+/** @type {{ file: OutputFile, url: string } | null} */
+let liveUrl = null;
+
+/** The one object URL, shared by the scripted download and the 「保存する」 link. @param {OutputFile} file @returns {string} */
+function objectUrl(file) {
+  if (liveUrl?.file !== file) {
+    if (liveUrl) URL.revokeObjectURL(liveUrl.url);
+    liveUrl = { file, url: URL.createObjectURL(file.blob) };
+  }
+  return liveUrl.url;
+}
+
+/** @param {Session} session */
+function releaseUrl(session) {
+  const { stage } = session;
+  const kept = stage.kind === 'ready' && stage.output.kind === 'written' ? stage.output.file : null;
+  if (liveUrl && liveUrl.file !== kept) {
+    URL.revokeObjectURL(liveUrl.url);
+    liveUrl = null;
+  }
+}
+
+/**
+ * Clicks a hidden <a download>. A browser may block it inside a cross-origin iframe when the click that started
+ * the export is seconds old, so the written state also shows a real 「保存する」 link.
+ * @param {OutputFile} file
+ */
+function download(file) {
+  const link = document.createElement('a');
+  link.href = objectUrl(file);
+  link.download = file.name;
+  link.hidden = true;
+  document.body.append(link);
+  link.click();
+  link.remove();
+}
+
+/**
+ * Owns the read and write job handles. dispatch(msg) runs update(), then the effects in order, then render().
+ * @param {Session} initial
+ * @param {Refs} refs
+ * @param {Promise<string>} workerUrl
+ */
+function createStore(initial, refs, workerUrl) {
+  let session = initial;
+  /** @type {{ cancel(): void } | null} */
+  let read = null;
+  /** @type {{ cancel(): void } | null} */
+  let write = null;
+
+  /** @param {Effect} effect */
+  const run = (effect) => {
+    switch (effect.type) {
+      case 'startRead': {
+        read?.cancel();
+        write?.cancel();
+        write = null;
+        /** @type {ReadRequest} */
+        const request = { type: 'read', source: effect.source, choice: effect.choice };
+        read = runJob(workerUrl, request, (event) => dispatch({ type: 'readEvent', event }));
+        break;
+      }
+      case 'startWrite': {
+        write?.cancel();
+        /** @type {WriteRequest} */
+        const request = { type: 'write', format: effect.format, source: effect.source, analysis: effect.analysis, options: effect.options };
+        write = runJob(workerUrl, request, (event) => dispatch({ type: 'writeEvent', event }));
+        break;
+      }
+      case 'cancelRead':
+        read?.cancel();
+        read = null;
+        break;
+      case 'cancelWrite':
+        write?.cancel();
+        write = null;
+        break;
+      case 'download':
+        download(effect.file);
+        break;
+      default: {
+        /** @type {never} */
+        const unhandled = effect;
+        void unhandled;
+      }
+    }
+  };
+
+  /** @param {Msg} msg */
+  const dispatch = (msg) => {
+    const [next, effects] = update(session, msg);
+    session = next;
+    for (const effect of effects) run(effect);
+    render(session, refs);
+    releaseUrl(session);
+  };
+
+  return { dispatch, current: () => session };
+}
+
+/**
+ * Every control becomes a Msg here: drop zone, file input, paste box, selects, header switch, column-mode buttons
+ * (delegated on the table), write, cancel, re-download and reset.
+ * @param {Refs} refs
+ * @param {ReturnType<typeof createStore>} store
+ */
+function bindEvents(refs, store) {
+  const { dispatch } = store;
+  /** @param {Source} source */
+  const choose = (source) => dispatch({ type: 'sourceChosen', source });
+  /** @param {File} file */
+  const chooseFile = (file) => choose({ kind: 'file', blob: file, name: file.name });
+
+  refs.dropzone.addEventListener('click', () => refs.fileInput.click());
+  refs.fileInput.addEventListener('change', () => {
+    const file = refs.fileInput.files?.[0];
+    refs.fileInput.value = '';
+    if (file) chooseFile(file);
+  });
+
+  /** @param {DragEvent} event */
+  const carriesFiles = (event) => event.dataTransfer?.types.includes('Files') ?? false;
+  let depth = 0;
+  refs.tool.addEventListener('dragenter', (event) => {
+    if (!carriesFiles(event)) return;
+    event.preventDefault();
+    depth += 1;
+    showDrag(refs, true);
+  });
+  refs.tool.addEventListener('dragover', (event) => {
+    if (!carriesFiles(event)) return;
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+  });
+  refs.tool.addEventListener('dragleave', () => {
+    depth = Math.max(0, depth - 1);
+    if (depth === 0) showDrag(refs, false);
+  });
+  refs.tool.addEventListener('drop', (event) => {
+    event.preventDefault();
+    depth = 0;
+    showDrag(refs, false);
+    const file = event.dataTransfer?.files[0];
+    if (file) chooseFile(file);
+  });
+  // A file dropped beside the tool would otherwise replace the page.
+  for (const type of /** @type {const} */ (['dragover', 'drop'])) {
+    window.addEventListener(type, (event) => {
+      if (carriesFiles(event)) event.preventDefault();
+    });
+  }
+
+  refs.fileTab.addEventListener('click', () => selectTab(refs, 'file'));
+  refs.pasteTab.addEventListener('click', () => selectTab(refs, 'paste'));
+  for (const tab of [refs.fileTab, refs.pasteTab]) {
+    tab.addEventListener('keydown', (event) => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault();
+      const next = event.key === 'Home' ? refs.fileTab : event.key === 'End' ? refs.pasteTab : tab === refs.fileTab ? refs.pasteTab : refs.fileTab;
+      selectTab(refs, next === refs.pasteTab ? 'paste' : 'file');
+      next.focus();
+    });
+  }
+
+  const syncPaste = () => {
+    refs.pasteSubmit.disabled = refs.pasteInput.value.length === 0;
+  };
+  const submitPaste = () => {
+    const text = refs.pasteInput.value;
+    if (text.length === 0) return;
+    choose({ kind: 'paste', blob: new Blob([text], { type: 'text/plain' }), name: '貼り付けデータ' });
+  };
+  refs.pasteInput.addEventListener('input', syncPaste);
+  refs.pasteInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+      event.preventDefault();
+      submitPaste();
+    }
+  });
+  refs.pasteSubmit.addEventListener('click', submitPaste);
+  syncPaste();
+
+  const changeChoice = () => dispatch({
+    type: 'choiceChanged',
+    choice: {
+      encoding: /** @type {Encoding | 'auto'} */ (refs.encoding.value),
+      delimiter: /** @type {Delimiter | 'auto'} */ (refs.delimiter.value),
+    },
+  });
+  refs.encoding.addEventListener('change', changeChoice);
+  refs.delimiter.addEventListener('change', changeChoice);
+  refs.header.addEventListener('change', () => dispatch({ type: 'headerToggled' }));
+
+  refs.table.addEventListener('click', (event) => {
+    const toggle = event.target instanceof Element ? event.target.closest('button[data-col]') : null;
+    if (toggle instanceof HTMLButtonElement) dispatch({ type: 'columnModeToggled', col: Number(toggle.dataset.col) });
+  });
+
+  /** @param {Format} format */
+  const requestWrite = (format) => {
+    const { stage } = store.current();
+    const same = stage.kind === 'ready' && stage.output.kind === 'written' && stage.output.format === format;
+    dispatch(same ? { type: 'redownloadRequested' } : { type: 'writeRequested', format });
+  };
+  refs.downloadXlsx.addEventListener('click', () => requestWrite('xlsx'));
+  refs.downloadCsv.addEventListener('click', () => requestWrite('csv'));
+  refs.writeCancel.addEventListener('click', () => dispatch({ type: 'writeCancelled' }));
+  refs.reset.addEventListener('click', () => {
+    dispatch({ type: 'reset' });
+    (refs.pastePanel.hidden ? refs.dropzone : refs.pasteInput).focus();
+  });
+}
+
+/**
+ * ?embed=1 sets data-embed on <html> before first paint. Inside a frame, a ResizeObserver posts
+ * { type: 'csv-zero:height', height } to the parent whenever the rounded-up height of <html> changes.
+ * targetOrigin is '*' because the payload is one number.
+ */
+function setupEmbed() {
+  const root = document.documentElement;
+  if (root.dataset.embed !== '1' || window.parent === window) return;
+  let sent = 0;
+  new ResizeObserver(() => {
+    const height = Math.ceil(root.getBoundingClientRect().height);
+    if (height === sent) return;
+    sent = height;
+    window.parent.postMessage({ type: 'csv-zero:height', height }, '*');
+  }).observe(root);
+}
+
+/** The 「コードをコピー」 button beside the iframe snippet. Without clipboard access it selects the code instead. */
+function setupCopy() {
+  const button = document.querySelector('[data-testid="copy-embed"]');
+  const code = document.querySelector('[data-ref="embed-code"]');
+  const label = document.querySelector('[data-ref="copy-label"]');
+  if (!(button instanceof HTMLButtonElement) || !(code instanceof HTMLElement) || !(label instanceof HTMLElement)) return;
+  const idle = label.textContent ?? '';
+  let timer = 0;
+  button.addEventListener('click', async () => {
+    let copied = false;
+    try {
+      await navigator.clipboard.writeText(code.textContent ?? '');
+      copied = true;
+    } catch {
+      const range = document.createRange();
+      range.selectNodeContents(code);
+      const selection = window.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    }
+    button.dataset.state = copied ? 'copied' : 'selected';
+    label.textContent = copied ? 'コピーしました' : '選択しました。Ctrl+Cでコピーできます';
+    window.clearTimeout(timer);
+    timer = window.setTimeout(() => {
+      delete button.dataset.state;
+      label.textContent = idle;
+    }, 2400);
+  });
+}
+
+const refs = findRefs(document, objectUrl);
+const store = createStore(initialSession({ xlsx: typeof CompressionStream === 'function' }), refs, preloadWorker(bundleUrl));
+bindEvents(refs, store);
+render(store.current(), refs);
+setupEmbed();
+setupCopy();

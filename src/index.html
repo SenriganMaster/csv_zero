@@ -2,15 +2,451 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' {{script-hashes}}; style-src 'self'; img-src 'self' data:; worker-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'">
-  <title>CSV 0落ち防止コンバーター</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E">
+  <script>if(new URLSearchParams(location.search).get('embed')==='1')document.documentElement.dataset.embed='1'</script>
+  <title>CSVを先頭の0が消えないExcel（xlsx）に変換｜CSV 0落ち防止コンバーター</title>
+  <meta name="description" content="CSVをExcelで開くと先頭の0が消える問題を防ぐ無料ツール。すべてのセルを文字列にした.xlsxへ変換するので、金融機関コード0001や郵便番号、電話番号もそのまま。Shift_JIS対応、ファイルは送信せずブラウザ内で処理します。">
+  <link rel="canonical" href="https://geneshokai.com/csv-zero/">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f4f6f8">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0d1216">
+  <meta name="format-detection" content="telephone=no">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="CSV 0落ち防止コンバーター">
+  <meta property="og:title" content="CSVの先頭の0が消えるのを防ぐ｜CSV 0落ち防止コンバーター">
+  <meta property="og:description" content="CSVを、すべてのセルが「文字列」のExcelファイル（.xlsx）に変換します。金融機関コードの0001も、郵便番号の0600000も、そのまま表示。ファイルはブラウザ内だけで処理します。">
+  <meta property="og:url" content="https://geneshokai.com/csv-zero/">
+  <meta property="og:image" content="https://geneshokai.com/csv-zero/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="CSV 0落ち防止コンバーター。先頭の0・長い数字・日付をそのままExcelへ。0001が0001のまま残る">
+  <meta property="og:locale" content="ja_JP">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="./favicon.png" sizes="32x32" type="image/png">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
   <link rel="stylesheet" href="{{styles}}">
   <script defer src="{{main}}"></script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "name": "CSV 0落ち防止コンバーター",
+      "url": "https://geneshokai.com/csv-zero/",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "Windows, macOS, iOS, Android",
+      "browserRequirements": "JavaScriptが有効な最新のブラウザ",
+      "inLanguage": "ja",
+      "isAccessibleForFree": true,
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "JPY" },
+      "description": "CSVを、すべてのセルが「文字列」のExcelファイル（.xlsx）に変換します。金融機関コードの0001も、郵便番号の0600000も、電話番号の09012345678も、Excelで開いたときにそのまま表示されます。ファイルはどこにも送信されません（ブラウザ内だけで処理）。"
+    },
+    {
+      "@type": "FAQPage",
+      "inLanguage": "ja",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "ファイルはどこかに送信されますか？",
+          "acceptedAnswer": { "@type": "Answer", "text": "いいえ。ファイルの読み込みと変換、ダウンロード用ファイルの作成は、すべてお使いのブラウザの中で行います。サーバーにアップロードする仕組みはなく、アクセス解析や広告のタグも入れていません。ページを開いたあとであれば、インターネット接続を切っても変換できます。" }
+        },
+        {
+          "@type": "Question",
+          "name": "Shift_JISのCSVに対応していますか？",
+          "acceptedAnswer": { "@type": "Answer", "text": "はい。UTF-8（BOMあり・なし）とShift_JISを自動で判定します。Shift_JISはWindowsの拡張文字（CP932）にも対応しているので、①や髙のような文字もそのまま変換できます。判定が合わないときは、文字コードを手動で切り替えるとすぐに読み直します。" }
+        },
+        {
+          "@type": "Question",
+          "name": "Macの Numbers や Googleスプレッドシートでも使えますか？",
+          "acceptedAnswer": { "@type": "Answer", "text": "はい。このツールはMacやスマートフォンのブラウザでも動きます。作った .xlsx は値を文字列として保存しているので、Numbers や Googleスプレッドシートで開いても先頭の0は残ります。GoogleスプレッドシートでCSVを直接インポートする場合は、「テキストを数値、日付、数式に変換する」のチェックを外すと0が残ります。" }
+        },
+        {
+          "@type": "Question",
+          "name": "何MBまで変換できますか？",
+          "acceptedAnswer": { "@type": "Answer", "text": "20MB（約20万行）のCSVなら、一般的なパソコンで十数秒以内に変換できます。処理はブラウザの中で行うため、扱える大きさは端末のメモリによって変わります。Excelの1シートの上限（1,048,576行・16,384列）を超えるデータは .xlsx にできないので、その場合は画面でお知らせします。" }
+        },
+        {
+          "@type": "Question",
+          "name": "保存した .xlsx をもう一度CSVにするとどうなりますか？",
+          "acceptedAnswer": { "@type": "Answer", "text": "Excelで「CSV」形式で保存し直すと、0001 は 0001 のまま書き出されます。ただし、そのCSVをまたExcelでダブルクリックして開くと、再び0が消えます。CSVには型の情報が残らないためです。相手に渡すときは .xlsx のまま渡すか、「データの取り込み」で開くよう伝えると確実です。" }
+        },
+        {
+          "@type": "Question",
+          "name": "数値として計算したい列はどうすればいいですか？",
+          "acceptedAnswer": { "@type": "Answer", "text": "プレビューの列見出しで「自動」を選びます。「自動」の列では、先頭に0が付いていない普通の数値（1200 や -3.5 など）だけを数値として保存し、それ以外の値は文字列のまま残します。0001 のような値は「自動」の列でも消えません。" }
+        },
+        {
+          "@type": "Question",
+          "name": "「CSV（UTF-8 BOM付き）」ボタンは何に使うのですか？",
+          "acceptedAnswer": { "@type": "Answer", "text": "Shift_JISのCSVをUTF-8に変換したいときに使います。BOM付きのUTF-8なら、Excelで開いたときの文字化けを防げます。ただしCSVには型の情報がないので、ダブルクリックで開くと先頭の0は消えます。0を残したいときは .xlsx を使ってください。" }
+        }
+      ]
+    }
+  ]
+}
+  </script>
 </head>
 <body>
-  <h1>CSV 0落ち防止コンバーター</h1>
-  <div data-testid="tool" data-phase="idle"><input type="file"></div>
+  <a class="skip-link" href="#tool">変換ツールへ移動</a>
+
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="./">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          <rect class="brand-mark-bg" width="32" height="32" rx="7"/>
+          <rect class="brand-mark-cell" x="3.25" y="5.25" width="23" height="19" rx="2.5"/>
+          <rect class="brand-mark-zero" x="10.55" y="8.55" width="8.4" height="12.4" rx="4.2"/>
+          <rect class="brand-mark-handle" x="22.25" y="20.25" width="6.5" height="6.5" rx="1"/>
+        </svg>
+        <span class="brand-text">
+          <span class="brand-name">CSV 0落ち防止コンバーター</span>
+          <span class="brand-tagline">先頭の0を消さずにExcelへ。無料・登録不要</span>
+        </span>
+      </a>
+      <nav class="site-nav" aria-label="ページ内の案内">
+        <a href="#howto">使い方</a>
+        <a href="#why">0が消える理由</a>
+        <a href="#compare">ほかの方法との比較</a>
+        <a href="#faq">よくある質問</a>
+        <a href="#embed">埋め込み</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap">
+      <div class="hero">
+        <p class="eyebrow">CSV 0落ち防止コンバーター</p>
+        <h1>CSVの先頭の0が消えるのを防ぐ</h1>
+        <p class="lead">CSVを、すべてのセルが「文字列」のExcelファイル（.xlsx）に変換します。金融機関コードの<span class="code-num">0001</span>も、郵便番号の<span class="code-num">0600000</span>も、電話番号の<span class="code-num">09012345678</span>も、Excelで開いたときにそのまま表示されます。</p>
+      </div>
+
+      <section class="tool" id="tool" data-testid="tool" data-phase="empty" aria-labelledby="tool-heading">
+        <h2 class="sr-only" id="tool-heading">CSVを変換する</h2>
+        <div class="card" data-ref="card">
+          <div class="alert alert-error" data-testid="notice" role="alert" hidden></div>
+
+          <div class="intake" data-ref="intake">
+            <div class="tabs" role="tablist" aria-label="読み込み方法">
+              <button type="button" class="tab" role="tab" id="tab-file" aria-selected="true" aria-controls="panel-file" data-ref="file-tab">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>
+                ファイル
+              </button>
+              <button type="button" class="tab" role="tab" id="tab-paste" aria-selected="false" aria-controls="panel-paste" tabindex="-1" data-testid="paste-tab">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M16 5h1a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1"/><path d="M9 12h6M9 16h4"/></svg>
+                貼り付け
+              </button>
+            </div>
+
+            <div class="panel" id="panel-file" role="tabpanel" aria-labelledby="tab-file">
+              <button type="button" class="dropzone" data-testid="dropzone">
+                <span class="dropzone-icon" aria-hidden="true">
+                  <svg class="icon" viewBox="0 0 24 24" focusable="false"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M14 3v5h5"/><path d="M12 18v-6.5"/><path d="m9.25 14.25 2.75-2.75 2.75 2.75"/></svg>
+                </span>
+                <span class="dropzone-title">CSVファイルをここにドロップ</span>
+                <span class="dropzone-or">または</span>
+                <span class="dropzone-button">ファイルを選択</span>
+                <span class="dropzone-hint">CSV・TSV・TXT（200MBまで）。文字コードと区切り文字は自動で判定します</span>
+              </button>
+            </div>
+
+            <div class="panel panel-paste" id="panel-paste" role="tabpanel" aria-labelledby="tab-paste" hidden>
+              <label class="field-label" for="paste-input">Excelやメモ帳からコピーした表を貼り付けてください</label>
+              <textarea class="paste-input" id="paste-input" data-testid="paste-input" rows="8" spellcheck="false" autocomplete="off" placeholder="銀行コード,支店コード,口座番号&#10;0001,001,0012345&#10;0005,010,0098765"></textarea>
+              <div class="paste-foot">
+                <p class="hint">タブ区切りとカンマ区切りのどちらでも読み込めます。</p>
+                <button type="button" class="btn btn-primary" data-testid="paste-submit" disabled>変換する</button>
+              </div>
+            </div>
+          </div>
+          <input type="file" data-testid="file-input" accept=".csv,.tsv,.txt,text/*,application/vnd.ms-excel" hidden>
+
+          <div class="result" data-ref="result" hidden>
+            <div class="filebar">
+              <span class="file-badge" aria-hidden="true">
+                <svg class="icon" viewBox="0 0 24 24" focusable="false"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>
+              </span>
+              <div class="file-main">
+                <p class="file-name" data-ref="file-name"></p>
+                <dl class="stats" data-testid="stats">
+                  <div class="stat"><dt>文字コード</dt><dd data-stat="encoding"></dd></div>
+                  <div class="stat"><dt>区切り文字</dt><dd data-stat="delimiter"></dd></div>
+                  <div class="stat"><dt>行数</dt><dd data-stat="rows"></dd></div>
+                  <div class="stat"><dt>列数</dt><dd data-stat="cols"></dd></div>
+                  <div class="stat"><dt>サイズ</dt><dd data-stat="size"></dd></div>
+                </dl>
+              </div>
+              <button type="button" class="btn btn-ghost btn-reset" data-testid="reset">別のファイルにする</button>
+            </div>
+
+            <div class="progress" data-ref="read-progress" hidden>
+              <p class="progress-row"><span class="progress-label" data-ref="read-label">読み込んでいます</span><span class="progress-pct" data-ref="read-pct" aria-hidden="true">0%</span></p>
+              <div class="progress-track" role="progressbar" aria-label="読み込み" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-ref="read-bar"><span class="progress-fill"></span></div>
+            </div>
+
+            <div class="settings" data-ref="settings">
+              <div class="field">
+                <label for="encoding">文字コード</label>
+                <select class="select" id="encoding" data-testid="encoding">
+                  <option value="auto">自動</option>
+                  <option value="utf-8">UTF-8</option>
+                  <option value="shift_jis">Shift_JIS</option>
+                  <option value="euc-jp">EUC-JP</option>
+                  <option value="utf-16le">UTF-16LE</option>
+                  <option value="utf-16be">UTF-16BE</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="delimiter">区切り文字</label>
+                <select class="select" id="delimiter" data-testid="delimiter">
+                  <option value="auto">自動</option>
+                  <option value=",">カンマ</option>
+                  <option value="&#9;">タブ</option>
+                  <option value=";">セミコロン</option>
+                </select>
+              </div>
+              <label class="check">
+                <input type="checkbox" data-testid="header" checked>
+                <span>1行目は見出し</span>
+              </label>
+            </div>
+
+            <div class="overview" data-ref="overview">
+              <div class="risk" data-ref="risk">
+                <p class="risk-head">
+                  <svg class="icon risk-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10.3 4.2 2.6 17.5a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0Z"/><path d="M12 9.5v4"/><path d="M12 17h.01"/></svg>
+                  <svg class="icon safe-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg>
+                  <span class="risk-summary" data-testid="risk-summary"></span>
+                </p>
+                <ul class="chips" data-ref="chips"></ul>
+                <p class="risk-foot" data-ref="risk-foot">変換した .xlsx では、どの値も元のCSVのまま残ります。</p>
+              </div>
+
+              <div class="actions" data-ref="actions">
+                <button type="button" class="btn btn-primary btn-lg" data-testid="download-xlsx">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4v11"/><path d="m7.5 10.5 4.5 4.5 4.5-4.5"/><path d="M5 20h14"/></svg>
+                  <span>Excel用（.xlsx）をダウンロード</span>
+                </button>
+                <p class="blocker" data-ref="blocker" hidden></p>
+                <button type="button" class="btn btn-secondary" data-testid="download-csv">CSV（UTF-8 BOM付き）</button>
+
+                <div class="progress progress-write" data-ref="write-progress" hidden>
+                  <p class="progress-row"><span class="progress-label" data-ref="write-label">作成しています</span><span class="progress-pct" data-ref="write-pct" aria-hidden="true">0%</span></p>
+                  <div class="progress-track" role="progressbar" aria-label="ファイルの作成" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-ref="write-bar"><span class="progress-fill"></span></div>
+                  <button type="button" class="btn btn-ghost btn-small" data-ref="write-cancel" data-testid="write-cancel">キャンセル</button>
+                </div>
+
+                <div class="saved" data-ref="saved" hidden>
+                  <p class="saved-title">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg>
+                    <span data-ref="saved-name"></span>
+                  </p>
+                  <a class="btn btn-secondary btn-small" data-testid="save-link" download>保存する</a>
+                  <p class="hint">ダウンロードが始まらないときは「保存する」を押してください。</p>
+                </div>
+
+                <p class="hint actions-note">おすすめは .xlsx です。CSVは「文字列」という型を持てないため、ダブルクリックで開くと先頭の0が消えることがあります。</p>
+              </div>
+            </div>
+
+            <ul class="warnings" data-testid="warnings" hidden></ul>
+
+            <div class="preview" data-ref="preview">
+              <div class="preview-head">
+                <h3 class="preview-title">プレビュー</h3>
+                <p class="legend"><span class="legend-swatch" aria-hidden="true"></span>Excelで直接開くと崩れる値</p>
+                <p class="preview-note" data-ref="preview-note"></p>
+              </div>
+              <div class="table-wrap" data-ref="table-wrap" tabindex="0" role="region" aria-label="プレビューの表">
+                <table class="grid" data-testid="preview"></table>
+              </div>
+            </div>
+          </div>
+
+          <p class="trust">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg>
+            ファイルはどこにも送信されません（ブラウザ内だけで処理）
+          </p>
+          <noscript><p class="alert alert-error">このツールを使うには、ブラウザのJavaScriptを有効にしてください。</p></noscript>
+        </div>
+        <p class="sr-only" data-ref="status" aria-live="polite"></p>
+        <p class="embed-credit"><a href="./" target="_blank" rel="noopener">CSV 0落ち防止コンバーター</a></p>
+      </section>
+    </div>
+
+    <div class="seo">
+      <section class="section" id="howto" aria-labelledby="howto-title">
+        <div class="wrap section-grid">
+          <h2 id="howto-title">使い方</h2>
+          <div class="section-body">
+            <ol class="steps">
+              <li class="step">
+                <h3>CSVファイルを選ぶ</h3>
+                <p>ファイルをドラッグ＆ドロップするか、「ファイルを選択」から開きます。Excelやメモ帳からコピーした表は、テキスト欄に貼り付けても変換できます。文字コード（UTF-8・Shift_JIS）と区切り文字（カンマ・タブ・セミコロン）は自動で判定します。</p>
+              </li>
+              <li class="step">
+                <h3>プレビューで確かめる</h3>
+                <p>0001 や 0600000 が元のCSVのまま表示されているかを確かめます。Excelで直接開くと崩れる値は、件数と色で示します。金額のように数値として計算したい列は、列ごとに「自動」へ切り替えられます。</p>
+              </li>
+              <li class="step">
+                <h3>.xlsx をダウンロードする</h3>
+                <p>「Excel用（.xlsx）をダウンロード」を押します。すべてのセルを書式「文字列」で保存するので、ダブルクリックで開いても先頭の0は消えません。</p>
+              </li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="why" aria-labelledby="why-title">
+        <div class="wrap section-grid">
+          <h2 id="why-title">なぜExcelで0が消えるのか</h2>
+          <div class="section-body">
+            <p>CSVは値をカンマで区切っただけのテキストで、「この列は文字列」という型の情報を持てません。そのためExcelは、CSVを開くときにセルの中身を見て、数値や日付だと推測した値を自動で変換します。変換されたまま上書き保存すると、元の値には戻せません。</p>
+            <div class="table-scroll">
+              <table class="table table-why">
+                <caption>Excelで直接開いたときによく起きる変換</caption>
+                <thead>
+                  <tr><th scope="col">元の値</th><th scope="col">Excelでの表示</th><th scope="col">起きていること</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td class="v-src" data-label="元の値">0001（金融機関コード）</td><td class="v-bad" data-label="Excelでの表示">1</td><td data-label="起きていること">数値とみなされ、先頭の0が消える</td></tr>
+                  <tr><td class="v-src" data-label="元の値">0600000（郵便番号）</td><td class="v-bad" data-label="Excelでの表示">600000</td><td data-label="起きていること">数値とみなされ、先頭の0が消える</td></tr>
+                  <tr><td class="v-src" data-label="元の値">09012345678（電話番号）</td><td class="v-bad" data-label="Excelでの表示">9012345678</td><td data-label="起きていること">数値とみなされ、先頭の0が消える</td></tr>
+                  <tr><td class="v-src" data-label="元の値">1-2</td><td class="v-bad" data-label="Excelでの表示">1月2日</td><td data-label="起きていること">日付とみなされる</td></tr>
+                  <tr><td class="v-src" data-label="元の値">1234567890123456</td><td class="v-bad" data-label="Excelでの表示">1.23457E+15</td><td data-label="起きていること">12桁以上の数値は指数表記になり、16桁目以降は0に置き換わる</td></tr>
+                  <tr><td class="v-src" data-label="元の値">=SUM(A1:A3)</td><td class="v-bad" data-label="Excelでの表示">計算結果</td><td data-label="起きていること">数式として計算される</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>Excelが数値として正確に持てるのは15桁までです。16桁以上の注文番号やカード番号は、あとから表示形式を直しても、16桁目以降が0になったまま戻りません。+81-90-1234-5678 のような国際電話番号は、引き算の式として計算されてしまいます。</p>
+            <p class="callout">このツールは、すべてのセルを文字列として保存し、セルの書式も「文字列（@）」にした .xlsx を作ります。Excelは型を推測しないので、値は元のCSVから1文字も変わりません。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="compare" aria-labelledby="compare-title">
+        <div class="wrap section-grid">
+          <h2 id="compare-title">Excelの他の対処法との比較</h2>
+          <div class="section-body">
+            <p>Excelの機能だけで0を残す方法もあります。どれも正しく使えば0は消えません。違うのは手間と、同じ作業を繰り返すかどうかです。</p>
+            <table class="table table-compare">
+              <thead>
+                <tr><th scope="col">方法</th><th scope="col">手順</th><th scope="col">向いている場面</th><th scope="col">注意点</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">データの取り込み（Power Query）</th>
+                  <td data-label="手順">［データ］タブの［テキストまたはCSVから］で開き、［データの変換］で列の型を「テキスト」に変える</td>
+                  <td data-label="向いている場面">同じ形式のCSVを定期的に取り込む</td>
+                  <td data-label="注意点">Power Queryも型を自動で推測するので、0を残したい列をすべて「テキスト」に直す必要がある</td>
+                </tr>
+                <tr>
+                  <th scope="row">テキストファイルウィザードで列を文字列に指定</th>
+                  <td data-label="手順">従来のテキストファイルウィザードの3ステップ目で、列ごとに「文字列」を選ぶ</td>
+                  <td data-label="向いている場面">列の少ないCSVを一度だけ開く</td>
+                  <td data-label="注意点">最近のExcelでは、オプションで従来のウィザードを表示させる設定が要る。列が多いと手間がかかる</td>
+                </tr>
+                <tr>
+                  <th scope="row">アポストロフィ（'）を付ける</th>
+                  <td data-label="手順">セルに '0001 のように入力する</td>
+                  <td data-label="向いている場面">数件を手で入力・修正する</td>
+                  <td data-label="注意点">大量のデータには向かない</td>
+                </tr>
+                <tr class="is-ours">
+                  <th scope="row">このツール</th>
+                  <td data-label="手順">CSVを選んで .xlsx をダウンロードする</td>
+                  <td data-label="向いている場面">受け取ったCSVをすぐ開きたい。Excelの取り込み操作に慣れていない</td>
+                  <td data-label="注意点">作られるのは別ファイルの .xlsx。CSVのまま使い続ける用途には向かない</td>
+                </tr>
+              </tbody>
+            </table>
+            <p>CSVの値を ="0001" の形に書き換える方法もありますが、Excel以外のソフトでは式の記号がそのまま残ります。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="faq" aria-labelledby="faq-title">
+        <div class="wrap section-grid">
+          <h2 id="faq-title">よくある質問</h2>
+          <div class="section-body">
+            <div class="faq">
+              <div class="faq-item">
+                <h3>ファイルはどこかに送信されますか？</h3>
+                <p>いいえ。ファイルの読み込みと変換、ダウンロード用ファイルの作成は、すべてお使いのブラウザの中で行います。サーバーにアップロードする仕組みはなく、アクセス解析や広告のタグも入れていません。ページを開いたあとであれば、インターネット接続を切っても変換できます。</p>
+              </div>
+              <div class="faq-item">
+                <h3>Shift_JISのCSVに対応していますか？</h3>
+                <p>はい。UTF-8（BOMあり・なし）とShift_JISを自動で判定します。Shift_JISはWindowsの拡張文字（CP932）にも対応しているので、①や髙のような文字もそのまま変換できます。判定が合わないときは、文字コードを手動で切り替えるとすぐに読み直します。</p>
+              </div>
+              <div class="faq-item">
+                <h3>Macの Numbers や Googleスプレッドシートでも使えますか？</h3>
+                <p>はい。このツールはMacやスマートフォンのブラウザでも動きます。作った .xlsx は値を文字列として保存しているので、Numbers や Googleスプレッドシートで開いても先頭の0は残ります。GoogleスプレッドシートでCSVを直接インポートする場合は、「テキストを数値、日付、数式に変換する」のチェックを外すと0が残ります。</p>
+              </div>
+              <div class="faq-item">
+                <h3>何MBまで変換できますか？</h3>
+                <p>20MB（約20万行）のCSVなら、一般的なパソコンで十数秒以内に変換できます。処理はブラウザの中で行うため、扱える大きさは端末のメモリによって変わります。Excelの1シートの上限（1,048,576行・16,384列）を超えるデータは .xlsx にできないので、その場合は画面でお知らせします。</p>
+              </div>
+              <div class="faq-item">
+                <h3>保存した .xlsx をもう一度CSVにするとどうなりますか？</h3>
+                <p>Excelで「CSV」形式で保存し直すと、0001 は 0001 のまま書き出されます。ただし、そのCSVをまたExcelでダブルクリックして開くと、再び0が消えます。CSVには型の情報が残らないためです。相手に渡すときは .xlsx のまま渡すか、「データの取り込み」で開くよう伝えると確実です。</p>
+              </div>
+              <div class="faq-item">
+                <h3>数値として計算したい列はどうすればいいですか？</h3>
+                <p>プレビューの列見出しで「自動」を選びます。「自動」の列では、先頭に0が付いていない普通の数値（1200 や -3.5 など）だけを数値として保存し、それ以外の値は文字列のまま残します。0001 のような値は「自動」の列でも消えません。</p>
+              </div>
+              <div class="faq-item">
+                <h3>「CSV（UTF-8 BOM付き）」ボタンは何に使うのですか？</h3>
+                <p>Shift_JISのCSVをUTF-8に変換したいときに使います。BOM付きのUTF-8なら、Excelで開いたときの文字化けを防げます。ただしCSVには型の情報がないので、ダブルクリックで開くと先頭の0は消えます。0を残したいときは .xlsx を使ってください。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="embed" aria-labelledby="embed-title">
+        <div class="wrap section-grid">
+          <h2 id="embed-title">ブログに埋め込む</h2>
+          <div class="section-body">
+            <p>このツールは iframe でブログやサイトに埋め込めます。WordPressなら「カスタムHTML」ブロックに次のコードを貼り付けてください。ツール部分だけが表示され、高さは中身に合わせて自動で変わります。</p>
+            <div class="code-block">
+              <div class="code-head">
+                <span class="code-lang">HTML</span>
+                <button type="button" class="btn btn-small btn-copy" data-testid="copy-embed">
+                  <svg class="icon icon-copy" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V5"/></svg>
+                  <svg class="icon icon-done" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+                  <span data-ref="copy-label">コードをコピー</span>
+                </button>
+              </div>
+              <pre class="code"><code data-ref="embed-code">&lt;iframe id=&quot;csv-zero&quot; src=&quot;https://geneshokai.com/csv-zero/?embed=1&quot; title=&quot;CSV 0落ち防止コンバーター&quot; loading=&quot;lazy&quot; style=&quot;width:100%;height:640px;border:0&quot;&gt;&lt;/iframe&gt;
+&lt;script&gt;
+addEventListener(&quot;message&quot;, function (e) {
+  if (e.origin === &quot;https://geneshokai.com&quot; &amp;&amp; e.data &amp;&amp; e.data.type === &quot;csv-zero:height&quot;) {
+    document.getElementById(&quot;csv-zero&quot;).style.height = e.data.height + &quot;px&quot;;
+  }
+});
+&lt;/script&gt;</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <div class="footer-main">
+        <p class="footer-name">CSV 0落ち防止コンバーター</p>
+        <ul class="footer-facts">
+          <li>アップロードなし</li>
+          <li>Cookieなし</li>
+          <li>アクセス解析なし</li>
+        </ul>
+      </div>
+      <p class="footer-related">金融機関コードや郵便番号の調べ方は、ブログ「<a href="https://senrinomitiwohitoaside.com/">快適生活＠IT力</a>」で紹介しています。</p>
+    </div>
+  </footer>
 </body>
 </html>
