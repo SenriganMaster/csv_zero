@@ -180,6 +180,13 @@ describe('planSheet', () => {
     ...overrides,
   });
 
+  test('widths are ceil(width × 1.1) + 2 in exact arithmetic, kept between 8 and 60', () => {
+    const widths = [0, 5, 10, 50, 53];
+    const columns = widths.map((width) => ({ width, risks: risks(), row0: { risk: null } }));
+    const plan = planSheet(analysis({ cols: widths.length, columns }), { header: true, autoColumns: [] });
+    assert.deepEqual(plan.columns.map((column) => column.width), [8, 8, 13, 57, 60]);
+  });
+
   test('header on: row 1 is never counted, widths follow the formula, 自動 columns are marked', () => {
     assert.deepEqual(planSheet(analysis(), { header: true, autoColumns: [1] }), {
       rows: 3,
