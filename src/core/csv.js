@@ -181,7 +181,7 @@ export function detectDelimiter(sample, complete, fileName) {
     .filter((candidate) => candidate.fields >= 2)
     .sort(
       (a, b) =>
-        b.share - a.share ||
+        a.others - b.others ||
         b.fields - a.fields ||
         Number(b.delimiter === preferred) - Number(a.delimiter === preferred),
     );
@@ -189,11 +189,12 @@ export function detectDelimiter(sample, complete, fileName) {
 }
 
 /**
- * The most common field count over the sample's first records, and the share of records that have it in tenths.
+ * The most common field count over the sample's first records, and how many records have another count. A count,
+ * not a share: a header that the delimiter does not split is one record, however many rows follow it.
  * @param {string} sample
  * @param {boolean} complete
  * @param {Delimiter} delimiter
- * @returns {{ fields: number, share: number }}
+ * @returns {{ fields: number, others: number }}
  */
 function shapeOf(sample, complete, delimiter) {
   const reader = createCsvReader(delimiter);
@@ -212,7 +213,7 @@ function shapeOf(sample, complete, delimiter) {
       most = count;
     }
   }
-  return { fields, share: records.length === 0 ? 0 : Math.round((most / records.length) * 10) };
+  return { fields, others: records.length - most };
 }
 
 /**

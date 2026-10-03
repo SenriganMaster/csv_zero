@@ -111,6 +111,10 @@ describe('detectDelimiter', () => {
     ['a full tie without extension goes to tab', 'a\tb,c\n', true, '貼り付けデータ', { delimiter: '\t', singleColumn: false }],
     ['share beats the extension', 'a\tb,c\n1\t2,3\n4,5\n', true, 'x.tsv', { delimiter: ',', singleColumn: false }],
     ['blank lines are ignored', '\n\na;b\n\n1;2\n', true, 'x.csv', { delimiter: ';', singleColumn: false }],
+    ['a pasted tab table with 1,234,567 in 30 rows', `口座番号\t金額\n${'0012345\t1,234,567\n'.repeat(30)}`, true, '貼り付けデータ', { delimiter: '\t', singleColumn: false }],
+    ['a .tsv with 1,234,567 in 30 rows', `口座番号\t金額\n${'0012345\t1,234,567\n'.repeat(30)}`, true, 'x.tsv', { delimiter: '\t', singleColumn: false }],
+    ['semicolon with decimal commas in 30 rows', `a;b\n${'1,5;2,25\n'.repeat(30)}`, true, 'x.csv', { delimiter: ';', singleColumn: false }],
+    ['a title line above a comma table', `取引明細\n日付,金額,摘要\n${'2024/01/05,1000,振込\n'.repeat(30)}`, true, 'x.csv', { delimiter: ',', singleColumn: false }],
     ['a cut-off last record is dropped', 'a;b,c\nd;e,f\ng;h', false, 'x.csv', { delimiter: ',', singleColumn: false }],
     ['the last record counts when the sample is the whole file', 'a;b,c\nd;e,f\ng;h', true, 'x.csv', { delimiter: ';', singleColumn: false }],
   ];

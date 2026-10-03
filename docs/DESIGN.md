@@ -99,13 +99,13 @@ CP932 text is almost never valid UTF-8, because its lead bytes 81-9F are UTF-8 c
 
 The encoding select offers 自動, UTF-8, Shift_JIS, EUC-JP, UTF-16LE and UTF-16BE. EUC-JP is never auto-detected, because EUC-JP bytes usually decode as valid Shift_JIS mojibake. It is a manual escape hatch that costs one `TextDecoder` label. Pasted text is already Unicode, so the select is disabled for a paste.
 
-For the delimiter, the read decodes the first 64 KiB with the resolved encoding and parses it with each candidate (`,` `\t` `;`) through the real reader. It uses up to 50 records, drops the last one unless the sample is the whole file, and ignores blank records. For each candidate, m is the most common field count and c is the share of records with m fields.
+For the delimiter, the read decodes the first 64 KiB with the resolved encoding and parses it with each candidate (`,` `\t` `;`) through the real reader. It uses up to 50 records, drops the last one unless the sample is the whole file, and ignores blank records. For each candidate, m is the most common field count and o is how many records have another count.
 
 | # | Rule | Result |
 |---|---|---|
 | 1 | the user picked a delimiter | that delimiter |
 | 2 | no candidate has m of 2 or more | `,` with `singleColumn: true`, shown as `SINGLE_COLUMN` |
-| 3 | otherwise, rank candidates with m of 2 or more by round(c × 10), then m, then the extension (`.tsv` prefers tab, `.csv` comma), then tab, comma, semicolon, since a tab inside text is rarer than a comma | the first |
+| 3 | otherwise, rank candidates with m of 2 or more by fewest o, then m, then the extension (`.tsv` prefers tab, `.csv` comma), then tab, comma, semicolon, since a tab inside text is rarer than a comma. A count, not a share: a share rounded to tenths let a header that tab splits and comma does not vanish after 20 rows, and comma won on m with 1,234,567 in every row | the first |
 
 ### Parser (Q3)
 
