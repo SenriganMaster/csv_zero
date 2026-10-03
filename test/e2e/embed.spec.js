@@ -1,6 +1,8 @@
+import fs from 'node:fs';
 import http from 'node:http';
 import { expect, test } from '@playwright/test';
 import { fixturePath } from './flow.js';
+import { readWorkbook } from './book.js';
 
 const PARENT = `<!DOCTYPE html>
 <html lang="ja">
@@ -40,6 +42,24 @@ test('embed mode posts a height that grows and does not shrink', async ({ page }
     expect(after.some((height) => height > 300)).toBe(true);
     expect(Math.max(...after)).toBeGreaterThan(before[before.length - 1]);
     for (const height of after) expect(height).toBeGreaterThanOrEqual(after[0]);
+  } finally {
+    await parent.close();
+  }
+});
+
+test('embed mode converts and downloads inside a cross-origin iframe', async ({ page }) => {
+  const parent = await listen(PARENT);
+  try {
+    await page.goto(parent.url);
+    const frame = page.frameLocator('iframe');
+    await frame.locator('[data-testid="file-input"]').setInputFiles(fixturePath('sjis-bank.csv'));
+    await frame.locator('[data-testid="tool"][data-phase="ready"]').waitFor();
+    const [download] = await Promise.all([page.waitForEvent('download'), frame.locator('[data-testid="download-xlsx"]').click()]);
+    expect(download.suggestedFilename()).toBe('sjis-bank_text.xlsx');
+    const book = readWorkbook(fs.readFileSync(await download.path()));
+    expect(book.cells.find((cell) => cell.ref === 'A2')?.text).toBe('0001');
+    await expect(frame.locator('[data-testid="save-link"]')).toBeVisible();
+    await expect(frame.locator('[data-testid="save-link"]')).toHaveAttribute('href', /^blob:/);
   } finally {
     await parent.close();
   }
