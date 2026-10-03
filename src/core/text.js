@@ -6,6 +6,7 @@ export const SNIFF_BYTES = 64 << 10;
 
 const XLSX_SIGNATURE = [0x50, 0x4b, 0x03, 0x04];
 const XLS_SIGNATURE = [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1];
+const PDF_SIGNATURE = [0x25, 0x50, 0x44, 0x46, 0x2d];
 /** @type {Partial<Record<Encoding, number[]>>} */
 const BOMS = { 'utf-8': [0xef, 0xbb, 0xbf], 'utf-16le': [0xff, 0xfe], 'utf-16be': [0xfe, 0xff] };
 /**
@@ -68,6 +69,7 @@ export async function* decodeText(blob, encoding, onBytes, sliceBytes = SLICE_BY
 function sniff(head) {
   if (startsWith(head, XLSX_SIGNATURE)) return 'NOT_CSV_XLSX';
   if (startsWith(head, XLS_SIGNATURE)) return 'NOT_CSV_XLS';
+  if (startsWith(head, PDF_SIGNATURE)) return 'NOT_CSV_BINARY';
   for (const encoding of /** @type {const} */ (['utf-8', 'utf-16le', 'utf-16be'])) {
     if (startsWith(head, /** @type {number[]} */ (BOMS[encoding]))) return { encoding, bom: true, asciiOnly: false };
   }

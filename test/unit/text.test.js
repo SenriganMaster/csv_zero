@@ -53,6 +53,7 @@ describe('detectEncoding', () => {
     ['CP932 ①髙', [0x87, 0x40, 0xfb, 0xfc], 'auto', verdict('shift_jis')],
     ['ZIP signature', [0x50, 0x4b, 0x03, 0x04], 'auto', failure('NOT_CSV_XLSX')],
     ['OLE2 signature', [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1], 'auto', failure('NOT_CSV_XLS')],
+    ['PDF with only text bytes', utf8('%PDF-1.7\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n%%EOF\n'), 'auto', failure('NOT_CSV_BINARY')],
     ['UTF-16LE BOM', [0xff, 0xfe, 0x61, 0x00], 'auto', verdict('utf-16le', true)],
     ['UTF-16BE BOM', [0xfe, 0xff, 0x00, 0x61], 'auto', verdict('utf-16be', true)],
     ['UTF-16LE without BOM', [0x61, 0x00, 0x2c, 0x00, 0x62, 0x00], 'auto', verdict('utf-16le')],
@@ -73,6 +74,7 @@ describe('detectEncoding', () => {
     ['forced EUC-JP', [0xa4, 0xa2, 0x2c, 0x61], 'euc-jp', verdict('euc-jp')],
     ['forced encoding still rejects ZIP', [0x50, 0x4b, 0x03, 0x04, 0x61], 'shift_jis', failure('NOT_CSV_XLSX')],
     ['forced encoding still rejects binary', [...PNG, ...noise(1000)], 'utf-8', failure('NOT_CSV_BINARY')],
+    ['forced encoding still rejects PDF', utf8('%PDF-1.4\n%%EOF\n'), 'shift_jis', failure('NOT_CSV_BINARY')],
   ];
   for (const [label, bytes, choice, expected] of cases) {
     test(label, async () => assert.deepEqual(await detect(bytes, choice), expected));

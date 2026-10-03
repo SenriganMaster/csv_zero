@@ -84,7 +84,7 @@ The rules run in order and the first match decides. Rules 1-7 run whatever the c
 |---|---|---|
 | 1 | 0 bytes | `EMPTY_FILE` |
 | 2 | starts `50 4B 03 04` | `NOT_CSV_XLSX` |
-| 3 | starts `D0 CF 11 E0 A1 B1 1A E1` | `NOT_CSV_XLS` |
+| 3 | starts `D0 CF 11 E0 A1 B1 1A E1`, or starts `25 50 44 46 2D` (`%PDF-`) | `NOT_CSV_XLS`, or `NOT_CSV_BINARY` |
 | 4 | starts `EF BB BF` | utf-8 with BOM |
 | 5 | starts `FF FE`, or starts `FE FF` | utf-16le with BOM, or utf-16be with BOM |
 | 6 | the rule 7 test holds, and the first 64 KiB read as UTF-16 in one byte order has TAB, LF, CR, comma or semicolon in at least 0.5 % of code units and controls in at most 1 % (NUL parity fails on 　 and 一, whose 00 byte sits where ASCII's does in the other order) | utf-16le, or utf-16be, without BOM |
@@ -239,7 +239,7 @@ Errors are values of `AppError` in `messages.js`. Only `describe()` words them, 
 | FILE_TOO_LARGE | over 200 MiB | ファイルが大きすぎます（{size}）。このツールで扱えるのは200MBまでです。 |
 | NOT_CSV_XLSX | ZIP signature | これはExcel（.xlsx）やZIPのファイルです。CSVなどのテキストファイルを選んでください。 |
 | NOT_CSV_XLS | OLE2 signature | これは古い形式のExcelファイル（.xls）です。CSVなどのテキストファイルを選んでください。 |
-| NOT_CSV_BINARY | encoding rule 7 | テキストではないファイルのようです（画像・PDF・圧縮ファイルなど）。CSVファイルを選んでください。 |
+| NOT_CSV_BINARY | encoding rule 3 (PDF) or rule 7 | テキストではないファイルのようです（画像・PDF・圧縮ファイルなど）。CSVファイルを選んでください。 |
 | READ_FAILED | the Blob read rejects | ファイルを読み込めませんでした。ファイルを移動・編集していないか確認して、もう一度選んでください。 |
 | OUT_OF_MEMORY | RangeError in the worker | ブラウザのメモリが足りず処理できませんでした。ほかのタブを閉じるか、パソコンのブラウザでお試しください。 |
 | WORKER_FAILED | worker error or unexpected exception | 処理中に予期しないエラーが起きました。ページを再読み込みして、もう一度お試しください。 |
