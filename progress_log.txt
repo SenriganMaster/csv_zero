@@ -15,3 +15,8 @@
                       .htaccess、deploy.yml（main への push のみ、FTPS 3 回試行）、ci.yml（pull_request）。
                       検証: build/serve の単体テスト 8 件成功、--out への出力成功、--out . と --out ../x は拒否。
                       コミット: 2a61a94 / 22559d3 / fe3a200 / 4165607 / 52cd1d3
+2026-10-04 01:10 JST  コアエンジン担当が完了。文字コード判定・CSVパーサ・Excel崩れ判定・ZIP・xlsx（共有文字列）・CSV 書き出し・テスト用 CSV 17 個。
+                      計測（Node 20、20MB・20万行）: 解析 0.74〜0.98 秒、xlsx 作成 3.55〜4.66 秒、ピーク RSS 約 300MB。
+                      LibreOffice で 30 通りの変換を往復し、全セルが元の文字列と一致（担当者の計測）。
+                      リード確認: 7 コミットを個別の worktree で型検査・単体テストし全て成功。sjis-bank.xlsx は 362 セル全てが t="s"、数式なし。
+                      コミット: fd4f3f4 / 84a3614 / dcb4c9d / 472a3f3 / 63a4936 / 48ccdc7 / 331919e / d1c46c3
