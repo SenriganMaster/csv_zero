@@ -14,3 +14,34 @@
 - [x] 性能: 20MB CSV の計測（プレビュー / xlsx）、UI 応答性、100MB の挙動 (2026-10-04 完了)
 - [x] デプロイ: deploy.yml（main への push のみ）/ ci.yml（pull_request）/ .htaccess (2026-10-03 完了)
 - [x] README.md・decisions.tsv 監査・REPORT (作業中)
+
+## 未着手（レビューで出た改善候補）
+
+ユーザーの判断待ち（REPORT の「未決事項」）:
+- [ ] deploy.yml の FTP-Deploy-Action をコミット SHA に固定する（ブリーフは @v4.3.6 と書いている）
+- [ ] ワーカーをメインバンドルに内蔵し、読み込み直後に回線が切れても動くようにする
+- [ ] styles.css（約 2,100 行）を tokens / tool / content / embed に分ける
+- [ ] zip エントリを書き込み型にして xlsx.js の handoff() をなくす
+- [ ] view.js のキャッシュ変数を減らし、プレビュー表を 2 回作るのをやめる
+- [ ] 文字コードを手動で指定したら、規則 7（バイナリ判定）を外せるようにする
+- [ ] 文字コード判定（ファイル全体のデコード）の間も進捗を出す
+
+コメントの代わりにコードで意図を示す候補（Comment Sicko の MUST KILL、未対応 17 件 + 1 件）:
+- [ ] main.js `preloadWorker`: オフライン用の blob: URL という目的を名前に出す
+- [ ] session.js `startRead`: 書き出しもキャンセルすることを明示する
+- [ ] text.js `EncodingVerdict.asciiOnly`: 強制指定・BOM・UTF-16 では常に false なので、意味どおりの名前にする
+- [ ] text.js `sniff`: UTF-16 判定が制御バイト判定より先に走る順序を構造で固定する
+- [ ] text.js `decodeText` の戻り値: 裸の number を名前付きの値にする
+- [ ] text.js `createDamageCount`: スライスをまたぐバイト列の持ち越しを抽出して名前を付ける
+- [ ] messages.js `formatBytes` の 1023.95 に名前を付ける
+- [ ] convert.js `createTally(shown)`: 呼び出し側の配列を書き換えず、行を返す
+- [ ] convert.js / view.js: 「1 文字多く送ると切り詰め」の合図を明示的なフラグにする
+- [ ] excel.js `classify`: ja-JP 版 Excel が前提であることを名前か型で示す
+- [ ] excel.js `AutoNumber.xf`: 生の 0 / 5 ではなく XF の名前を使う
+- [ ] xlsx.js `XF`: STYLES の `<xf>` の並びと、片方からもう片方を作る
+- [ ] zip.js `slice` / `range`: ビューを返す方とコピーを返す方の名前が逆なので改名する
+- [ ] zip.js `DOS_DATE`: 年・月・日の部品から組み立てる
+- [ ] zip.js `deflateEntry` の name: ASCII 限定を assert する
+- [ ] xlsx.js `createXmlBytes().integer`: 負数・小数を拒否するか、uint に改名する
+- [ ] scripts/test-unit.mjs `TEST_FILE_RE`: Node 20 の選び方と違う（test.a.js）。直すか、今の挙動を仕様にする
+- [ ] test/e2e/bench-csv.js `LINE_BYTES`: 103 を 20 MiB / 100 MiB の目標から式で書く
