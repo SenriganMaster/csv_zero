@@ -179,7 +179,8 @@ export function detectDelimiter(sample, complete, fileName) {
       (a, b) =>
         a.others - b.others ||
         b.fields - a.fields ||
-        Number(b.delimiter === preferred) - Number(a.delimiter === preferred),
+        Number(b.delimiter === preferred) - Number(a.delimiter === preferred) ||
+        CANDIDATES.indexOf(a.delimiter) - CANDIDATES.indexOf(b.delimiter),
     );
   return ranked.length === 0 ? { delimiter: ',', singleColumn: true } : { delimiter: ranked[0].delimiter, singleColumn: false };
 }
