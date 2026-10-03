@@ -275,7 +275,7 @@ The e2e suite runs Playwright on Chromium against the built `deploy/` on a local
 - Force UTF-8 on the Shift_JIS file and expect `DECODE_REPLACED`, then return to 自動 and expect it gone. Drop an .xlsx and expect the `NOT_CSV_XLSX` sentence.
 - Load the page, call `context.setOffline(true)`, then convert and download. Assert every logged request is same-origin.
 - Frame `?embed=1` from a page on a second origin, receive `csv-zero:height`, and download from inside the frame.
-- Time a generated 20 MB CSV to ready and to download, while a rAF sampler shows no main-thread gap over 200 ms.
+- Time a generated 20 MB CSV to ready and to download, with a rAF sampler on the main thread. The e2e suite fails at 15 s end to end or a 500 ms gap, a freeze even on a slow CI runner. `npm run perf` fails at a 200 ms gap, or when 100 MB does not complete.
 - Save screenshots at 1440 px and 390 px into `screens/`.
 
 ### Interface depth

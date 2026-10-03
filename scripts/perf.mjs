@@ -7,10 +7,12 @@ import { writeBenchCsv } from '../test/e2e/bench-csv.js';
 import { installMeters, readMeters, timeUntilReady, timedDownload, workDir } from '../test/e2e/flow.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+/** Exits 1 on a miss: 20 MB ready + xlsx under 15 s (docs/BRIEF.md), every frame gap under 200 ms, 100 MB completes. */
 const CASES = [
-  { rows: 200_000 },
-  { rows: 1_000_000 },
+  { rows: 200_000, endToEndMs: 15_000 },
+  { rows: 1_000_000, endToEndMs: Infinity },
 ];
+const MAX_GAP_MS = 200;
 
 function mib(bytes) {
   return (bytes / (1024 * 1024)).toFixed(2);
@@ -95,6 +97,22 @@ async function main() {
     await browser.close();
     await server.close();
   }
+  const found = misses(rows);
+  for (const line of found) console.error(`miss: ${line}`);
+  if (found.length > 0) process.exitCode = 1;
+}
+
+/** @param {Record<string, string | number>[]} rows */
+function misses(rows) {
+  return rows.flatMap((row, index) => {
+    const { rows: dataRows, endToEndMs } = CASES[index];
+    if (row.completed !== 'yes') return [`${dataRows} rows did not complete`];
+    const endToEnd = Number(row.readyMs) + Number(row.xlsxMs);
+    return [
+      ...(endToEnd < endToEndMs ? [] : [`${dataRows} rows took ${endToEnd} ms to ready + xlsx, target under ${endToEndMs} ms`]),
+      ...(Number(row.maxGapMs) < MAX_GAP_MS ? [] : [`${dataRows} rows had a ${row.maxGapMs} ms frame gap, target under ${MAX_GAP_MS} ms`]),
+    ];
+  });
 }
 
 main().catch((error) => {
