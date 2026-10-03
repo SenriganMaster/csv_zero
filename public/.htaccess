@@ -1,0 +1,26 @@
+AddType text/javascript .js .mjs
+AddType image/svg+xml .svg
+AddType application/manifest+json .webmanifest
+# AddDefaultCharset only affects text/html and text/plain.
+AddDefaultCharset UTF-8
+AddCharset UTF-8 .html .js .mjs .css .svg
+
+Options -Indexes
+
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+
+  # esbuild [hash] is 8 chars of RFC 4648 base32 (A-Z and 2-7), e.g. main-SJS2HFKO.js.
+  <FilesMatch "-[A-Z2-7]{8}\.(js|css)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+
+  <FilesMatch "\.(png|svg|ico)$">
+    Header set Cache-Control "public, max-age=604800"
+  </FilesMatch>
+</IfModule>
