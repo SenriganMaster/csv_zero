@@ -1,3 +1,7 @@
 2026-10-03 22:27 JST  セッション開始。docs/BRIEF.md を読了。リポジトリは README.md と BRIEF.md のみ（グリーンフィールド）。
 2026-10-03 22:35 JST  環境確認: Node 20.19.2 / npm 9.2.0 / Python 3.13.5 / Google Chrome 154 / LibreOffice あり / Noto Sans CJK JP あり。
                       Node でも TextDecoder('shift_jis') が CP932（①・髙）を復号でき、CompressionStream('deflate-raw') も使える。
+2026-10-03 22:45 JST  調査: Apple Numbers と iOS のクイックルックは inlineStr のセルを表示しない（box/spout#53）。セルは共有文字列 t="s" で書くと決定。
+2026-10-03 22:55 JST  足場を追加（esbuild ビルド、静的サーバ、スクリーンショット、Playwright 設定）。
+                      検証: rm -rf node_modules deploy && npm ci && npm run build && npm test が成功（型検査 OK、単体 4 件、E2E 1 件）。
+                      コミット: 59ce506 / f12c6c3 / 4051307 / c7d869a
