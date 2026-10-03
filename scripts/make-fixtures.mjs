@@ -1,5 +1,3 @@
-/** Writes test/fixtures/. Deterministic: the same script always writes the same bytes, and the outputs are committed. */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -130,7 +128,6 @@ for (const [name, bytes] of Object.entries(fixtures)) {
 console.log(`total ${total} B`);
 
 /**
- * Minimal quoting, the way most exports write: only fields with the delimiter, a quote, CR or LF are quoted.
  * @param {string[][]} rows
  * @param {string} delimiter
  * @param {string} eol
@@ -156,7 +153,6 @@ function utf16le(text) {
   return bytes;
 }
 
-/** A ZIP signature followed by fixed pseudo-random bytes. */
 function fakeZip() {
   const bytes = new Uint8Array(256);
   bytes.set([0x50, 0x4b, 0x03, 0x04]);

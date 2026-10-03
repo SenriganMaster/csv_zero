@@ -1,5 +1,3 @@
-/** The two operations a worker runs. Each one re-reads the source, so a job is a pure function of its request. */
-
 import { detectEncoding, decodeText, SNIFF_BYTES } from './text.js';
 import { createCsvReader, detectDelimiter, csvRecord, detach, isBlank } from './csv.js';
 import { classify, displayWidth, noRisks, planSheet, sheetName, LIMITS } from './excel.js';
@@ -11,27 +9,19 @@ import { writeXlsx } from './xlsx.js';
 /** @import { RiskKind, RiskCounts, SheetOptions } from './excel.js' */
 /** @import { Result } from './messages.js' */
 
-/** @typedef {{ kind: 'file' | 'paste', blob: Blob, name: string }} Source  The blob is the only copy of the data. */
-/** @typedef {{ encoding: Encoding | 'auto', delimiter: Delimiter | 'auto' }} ParseChoice  What the selects show. */
-/** @typedef {{ encoding: Encoding, delimiter: Delimiter }} ParseSettings  Resolved. A write reuses it verbatim. */
-/**
- * @typedef {{ encoding: EncodingVerdict, delimiter: DelimiterVerdict }} Detected  The verdicts behind the settings:
- *   what 自動 picked, or the forced value. A paste is always UTF-8.
- */
-/**
- * Display only: PREVIEW.records records, fewer once they hold PREVIEW.budget characters, at least one.
- * Each keeps PREVIEW.fields fields. A longer field than PREVIEW.chars keeps one character more, which tells the view
- * to mark it as cut.
- * @typedef {{ settings: ParseSettings, detected: Detected, records: string[][] }} Preview
- */
+/** @typedef {{ kind: 'file' | 'paste', blob: Blob, name: string }} Source */
+/** @typedef {{ encoding: Encoding | 'auto', delimiter: Delimiter | 'auto' }} ParseChoice */
+/** @typedef {{ encoding: Encoding, delimiter: Delimiter }} ParseSettings */
+/** @typedef {{ encoding: EncodingVerdict, delimiter: DelimiterVerdict }} Detected */
+/** @typedef {{ settings: ParseSettings, detected: Detected, records: string[][] }} Preview */
 /**
  * @typedef {object} ColumnStats
- * @property {number} width  Max displayWidth over every record, row 0 included.
- * @property {RiskCounts} risks  Records 1 to rows-1.
- * @property {{ risk: RiskKind | null }} row0  planSheet adds it when the header option is off.
+ * @property {number} width
+ * @property {RiskCounts} risks
+ * @property {{ risk: RiskKind | null }} row0
  */
 
-/** @typedef {{ count: number, row: number, col: number }} CellIssue  The first cell, plus how many share the issue. */
+/** @typedef {{ count: number, row: number, col: number }} CellIssue */
 /**
  * @typedef {Preview & {
  *   rows: number, cols: number, columns: ColumnStats[],
@@ -46,11 +36,9 @@ import { writeXlsx } from './xlsx.js';
 const UTF8_BOM = Uint8Array.of(0xef, 0xbb, 0xbf);
 
 /**
- * Detects, decodes, parses, and measures the whole file once.
  * @param {Source} source
  * @param {ParseChoice} choice
  * @param {{ onPreview(preview: Preview): void, onProgress(ratio: number): void }} hooks
- *   onPreview fires once, at PREVIEW.records records or at EOF, which is usually inside the first slice.
  * @returns {Promise<Result<Analysis>>}
  */
 export async function analyze(source, choice, hooks) {
@@ -81,13 +69,12 @@ export async function analyze(source, choice, hooks) {
 }
 
 /**
- * Writes the whole file in one format. Re-reads with analysis.settings and never re-detects.
  * @param {Format} format
  * @param {Source} source
  * @param {Analysis} analysis
- * @param {SheetOptions} options  Ignored for csv.
+ * @param {SheetOptions} options
  * @param {(ratio: number) => void} onProgress
- * @returns {Promise<Result<OutputFile>>}  Named '<base>_text.xlsx' or '<base>_utf8bom.csv'.
+ * @returns {Promise<Result<OutputFile>>}
  */
 export async function write(format, source, analysis, options, onProgress) {
   const base = source.name.replace(/\.[^.]*$/, '');
@@ -100,12 +87,10 @@ export async function write(format, source, analysis, options, onProgress) {
 }
 
 /**
- * Decoded and parsed records, one batch per slice. analyze and both writers iterate this generator.
  * @param {Blob} blob
  * @param {ParseSettings} settings
- * @param {(ratio: number) => void} onProgress  Bytes read divided by blob.size.
+ * @param {(ratio: number) => void} onProgress
  * @returns {AsyncGenerator<string[][], { unterminatedQuoteRow: number | null, damage: number }, void>}
- *   damage: how many U+FFFD the decoder wrote for undecodable bytes.
  */
 async function* recordBatches(blob, settings, onProgress) {
   const reader = createCsvReader(settings.delimiter);
@@ -121,7 +106,6 @@ async function* recordBatches(blob, settings, onProgress) {
 }
 
 /**
- * The delimiter verdict from the decoded first SNIFF_BYTES.
  * @param {Source} source
  * @param {Encoding} encoding
  */
@@ -131,14 +115,11 @@ async function sniffDelimiter(source, encoding) {
   return detectDelimiter(sample, source.blob.size <= SNIFF_BYTES, source.name);
 }
 
-/**
- * The O(cols) counters behind an Analysis, filling `shown` with the preview records on the way.
- * @param {string[][]} shown
- */
+/** @param {string[][]} shown */
 function createTally(shown) {
   /** @type {ColumnStats[]} */
   const columns = [];
-  /** Field count of non-blank records → how many have it, and the first one's row. @type {Map<number, { count: number, row: number }>} */
+  /** @type {Map<number, { count: number, row: number }>} */
   const shapes = new Map();
   /** @type {CellIssue} */
   const overlong = { count: 0, row: 0, col: 0 };
@@ -180,7 +161,7 @@ function createTally(shown) {
     },
     previewFull: () => shown.length === PREVIEW.records || previewChars >= PREVIEW.budget,
     rows: () => rows,
-    /** @param {number} damage  The decoder's count, which leaves out correctly encoded U+FFFD. */
+    /** @param {number} damage */
     result: (damage) => ({
       rows,
       cols,
@@ -200,8 +181,6 @@ function note(issue, row, col) {
 }
 
 /**
- * Records whose field count differs from the most common one. A tie goes to the wider count, since short records
- * are the ones that get padded.
  * @param {Map<number, { count: number, row: number }>} shapes
  * @returns {{ count: number, row: number } | null}
  */
@@ -224,10 +203,7 @@ function raggedRecords(shapes) {
   return count === 0 ? null : { count, row };
 }
 
-/**
- * UTF-8 with a BOM, CRLF, and csvRecord quoting, encoded one part per batch.
- * @param {AsyncIterable<string[][]>} batches
- */
+/** @param {AsyncIterable<string[][]>} batches */
 async function csvBlob(batches) {
   const encoder = new TextEncoder();
   /** @type {Uint8Array<ArrayBuffer>[]} */

@@ -9,8 +9,6 @@ const TEXT_ONLY = { header: true, autoColumns: [] };
 let spawned = 0;
 
 /**
- * One job the way main.js runs it: a fresh worker module gets one request. Resolves with every event posted
- * up to and just after the terminal one.
  * @param {object} request
  * @returns {Promise<any[]>}
  */
@@ -56,7 +54,6 @@ describe('read job', () => {
   });
 
   test('posts progress at most once per whole percent', async () => {
-    // 150 slices of 1 MiB report 150 ratios for 101 whole percents.
     const lines = new Uint8Array(1 << 20).fill(0x0a);
     const blob = new Blob(Array.from({ length: 150 }, () => lines));
     const events = await runJob({ type: 'read', source: blobSource(blob, 'lines.csv'), choice: { encoding: 'utf-8', delimiter: ',' } });
@@ -124,7 +121,7 @@ describe('unexpected exceptions', () => {
 
   test('map to AppError values and leave the exception in the console', async (t) => {
     const logged = t.mock.method(console, 'error', () => {});
-    /** Stands in for failures no real file can be made to cause. @param {unknown} error */
+    /** @param {unknown} error */
     const failing = (error) => ({ size: 1, slice: () => ({ arrayBuffer: () => Promise.reject(error) }) });
     /** @type {[unknown, object][]} */
     const cases = [

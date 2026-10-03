@@ -7,7 +7,6 @@ import { fileSource, fixture } from '../helpers/fixtures.js';
 const AUTO = /** @type {const} */ ({ encoding: 'auto', delimiter: 'auto' });
 const TEXT_ONLY = { header: true, autoColumns: [] };
 const HOOKS = { onPreview() {}, onProgress() {} };
-/** 2.5 MiB, so three 1 MiB slices, in 2,560 records. */
 const THREE_SLICES = `${'a'.repeat(1023)}\n`.repeat(2560);
 
 /** @param {string | Uint8Array} content @param {string} [name] */
@@ -23,11 +22,10 @@ async function analysisOf(source, choice = AUTO) {
   return read.value;
 }
 
-/** The analysis without its preview records and per-column stats. @param {import('../../src/core/convert.js').Analysis} analysis */
+/** @param {import('../../src/core/convert.js').Analysis} analysis */
 const summary = ({ records, columns, ...rest }) => rest;
 
 /**
- * The csv output after its BOM.
  * @param {import('../../src/core/convert.js').Source} source
  * @param {import('../../src/core/convert.js').Analysis} analysis
  */

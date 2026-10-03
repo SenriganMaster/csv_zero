@@ -1,6 +1,6 @@
 import { createCsvReader } from '../../src/core/csv.js';
 
-/** Page stat text → TextDecoder label. A BOM suffix is display-only; TextDecoder strips the BOM. */
+/** A BOM suffix is display-only; TextDecoder strips the BOM. */
 const ENCODINGS = {
   'ASCII（英数字・記号のみ）': 'utf-8',
   'UTF-8': 'utf-8',
@@ -44,7 +44,7 @@ export function recordsFromBytes(bytes, encoding, delimiter) {
   return records;
 }
 
-/** Outside quotes, every record ends with CRLF. Quoted fields may contain CR or LF. @param {string} text */
+/** @param {string} text */
 export function crlfRecordEnds(text) {
   let quoted = false;
   for (let index = 0; index < text.length; index++) {

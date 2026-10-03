@@ -66,7 +66,6 @@ async function main() {
 
   const workerOut = await bundleJs('src/worker.js', 'worker-[hash]', assetsDir);
   const workerBase = path.basename(workerOut);
-  // The page resolves the worker against the bundle URL, so the hash file's basename is enough.
   const mainOut = await bundleJs('src/main.js', 'main-[hash]', assetsDir, {
     __WORKER_FILE__: JSON.stringify(workerBase),
   });

@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const unitDir = path.join(root, 'test', 'unit');
 
-// Same filenames `node --test <dir>` selects on Node 20. Node 24 does not walk a directory.
+// Node 24 does not walk a directory.
 const TEST_FILE_RE = /^(?:test(?:[.-].+)?|.+[._-]test)\.(?:c|m)?js$/;
 
 function testFiles(dir) {

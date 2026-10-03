@@ -4,7 +4,6 @@ import path from 'node:path';
 const NAMES = ['山田太郎', '佐藤花子', '鈴木一郎', '高橋美咲', '伊藤健太', '渡辺由美', '中村翔太', '小林さくら'];
 const DEPTS = ['営業部', '経理部', '開発部', '総務部'];
 const HEADER = 'コード,支店,氏名,日付,金額,電話,注文番号,部署,備考,区分\r\n';
-/** Fixed byte width so 200_000 data rows land on about 20 MiB and 1_000_000 on about 100 MiB. */
 const LINE_BYTES = 103;
 
 /** @param {number} index */

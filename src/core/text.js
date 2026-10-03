@@ -1,10 +1,5 @@
-/** Bytes to text. Owns every encoding rule: magic numbers, BOMs, UTF-16 sniffing, UTF-8 versus CP932. */
-
-/** @typedef {'utf-8' | 'shift_jis' | 'euc-jp' | 'utf-16le' | 'utf-16be'} Encoding  shift_jis is WHATWG Shift_JIS, which is CP932. euc-jp is manual only. */
-/**
- * @typedef {{ encoding: Encoding, bom: boolean, asciiOnly: boolean }} EncodingVerdict
- *   asciiOnly: 自動 read the whole file and found no byte at 80 or above. Always false for a forced encoding.
- */
+/** @typedef {'utf-8' | 'shift_jis' | 'euc-jp' | 'utf-16le' | 'utf-16be'} Encoding  shift_jis is WHATWG Shift_JIS, which is CP932. */
+/** @typedef {{ encoding: Encoding, bom: boolean, asciiOnly: boolean }} EncodingVerdict */
 
 export const SLICE_BYTES = 1 << 20;
 export const SNIFF_BYTES = 64 << 10;
@@ -14,8 +9,7 @@ const XLS_SIGNATURE = [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1];
 /** @type {Partial<Record<Encoding, number[]>>} */
 const BOMS = { 'utf-8': [0xef, 0xbb, 0xbf], 'utf-16le': [0xff, 0xfe], 'utf-16be': [0xfe, 0xff] };
 /**
- * U+FFFD as each encoding writes it, with the code unit it must align to. CP932 and EUC-JP cannot encode U+FFFD,
- * so every U+FFFD they decode stands for undecodable bytes.
+ * CP932 and EUC-JP cannot encode U+FFFD, so every U+FFFD they decode stands for undecodable bytes.
  * @type {Partial<Record<Encoding, { bytes: number[], unit: number }>>}
  */
 const ENCODED_REPLACEMENT = {
@@ -26,10 +20,8 @@ const ENCODED_REPLACEMENT = {
 const NO_BYTES = new Uint8Array(0);
 
 /**
- * Rejects files that are not text and picks an encoding (rule table: design.md, Q2).
- * Reads the blob in slices and holds one slice at a time.
  * @param {Blob} blob
- * @param {Encoding | 'auto'} choice  A forced encoding still runs the rejection rules 1-3 and 7.
+ * @param {Encoding | 'auto'} choice
  * @returns {Promise<import('./messages.js').Result<EncodingVerdict>>}
  */
 export async function detectEncoding(blob, choice) {
@@ -45,14 +37,12 @@ export async function detectEncoding(blob, choice) {
 }
 
 /**
- * The decoded text in file order, one string per slice. The streaming decoder carries multibyte
- * sequences across slices and strips a BOM that matches `encoding`. Never fatal: bad bytes become U+FFFD.
+ * The streaming decoder carries multibyte sequences across slices and strips a BOM that matches `encoding`.
  * @param {Blob} blob
  * @param {Encoding} encoding
  * @param {(bytesRead: number) => void} onBytes
- * @param {number} [sliceBytes]  Tests pass tiny slices to put boundaries inside characters.
- * @returns {AsyncGenerator<string, number, void>}  Returns how many U+FFFD stand for undecodable bytes, which leaves
- *   out every correctly encoded U+FFFD (design.md, Q2).
+ * @param {number} [sliceBytes]
+ * @returns {AsyncGenerator<string, number, void>}
  */
 export async function* decodeText(blob, encoding, onBytes, sliceBytes = SLICE_BYTES) {
   const decoder = new TextDecoder(encoding);
@@ -72,10 +62,8 @@ export async function* decodeText(blob, encoding, onBytes, sliceBytes = SLICE_BY
 }
 
 /**
- * Rules 2-7, which look only at the first SNIFF_BYTES. Rule 6 only sees heads that rule 7 would call binary, since
- * UTF-16 text is full of NULs and 8-bit text has almost none.
  * @param {Uint8Array} head
- * @returns {'NOT_CSV_XLSX' | 'NOT_CSV_XLS' | 'NOT_CSV_BINARY' | EncodingVerdict | null}  null leaves the choice to rules 8-10.
+ * @returns {'NOT_CSV_XLSX' | 'NOT_CSV_XLS' | 'NOT_CSV_BINARY' | EncodingVerdict | null}
  */
 function sniff(head) {
   if (startsWith(head, XLSX_SIGNATURE)) return 'NOT_CSV_XLSX';
@@ -91,7 +79,6 @@ function sniff(head) {
 }
 
 /**
- * Rules 8-10 over the whole file.
  * @param {Blob} blob
  * @returns {Promise<EncodingVerdict>}
  */
@@ -110,19 +97,14 @@ async function utf8OrShiftJis(blob) {
   return { encoding: 'shift_jis', bom: false, asciiOnly: false };
 }
 
-/**
- * U+FFFD in the decoder's output minus the correctly encoded U+FFFD in its input. The last bytes of each slice are
- * kept, so a sequence split across slices counts once, in the slice that completes it. That slice's text also holds
- * its U+FFFD, so slices whose text has none are never scanned.
- * @param {Encoding} encoding
- */
+/** @param {Encoding} encoding */
 function createDamageCount(encoding) {
   const encoded = ENCODED_REPLACEMENT[encoding];
   let tail = NO_BYTES;
   let offset = 0;
   let total = 0;
   return {
-    /** @param {Uint8Array} bytes @param {string} text  What the decoder returned for these bytes. */
+    /** @param {Uint8Array} bytes @param {string} text */
     add(bytes, text) {
       const found = countReplacements(text);
       if (found > 0) total += encoded ? found - countEncoded(tail, bytes, offset - tail.length, encoded) : found;
@@ -136,7 +118,7 @@ function createDamageCount(encoding) {
 /**
  * @param {Uint8Array} tail
  * @param {Uint8Array} bytes
- * @param {number} start  File offset of tail[0].
+ * @param {number} start
  * @param {{ bytes: number[], unit: number }} encoded
  */
 function countEncoded(tail, bytes, start, { bytes: sequence, unit }) {
@@ -167,9 +149,8 @@ function countReplacements(text) {
 }
 
 /**
- * The byte order whose code units hold a CSV's TAB, LF, CR, comma or semicolon at least once per 200 units, with
- * at most 1% control units. Read in the other order, those characters become U+0900, U+0A00 and so on. NUL parity
- * cannot decide it: 　 (U+3000) and 一 (U+4E00) put their 00 byte where ASCII puts its 00 in the other order.
+ * NUL parity cannot pick the byte order: 　 (U+3000) and 一 (U+4E00) put their 00 byte where ASCII puts its 00
+ * in the other order.
  * @param {Uint8Array} head
  * @returns {'utf-16le' | 'utf-16be' | null}
  */
@@ -187,15 +168,14 @@ function utf16WithoutBom(head) {
   return best.structure >= units * 0.005 && best.controls <= units * 0.01 ? encoding : null;
 }
 
-/** @param {{ structure: number, controls: number }} counts @param {number} low  A code unit below U+0100. */
+/** @param {{ structure: number, controls: number }} counts @param {number} low */
 function countUnit(counts, low) {
   if (low === 0x09 || low === 0x0a || low === 0x0d || low === 0x2c || low === 0x3b) counts.structure++;
   else if (isControl(low)) counts.controls++;
 }
 
 /**
- * 00-08, 0E-1A and 1C-1F, the C0 controls that text does not use. TAB, LF, VT, FF and CR are whitespace,
- * and ESC starts ISO-2022-JP escapes.
+ * TAB, LF, VT, FF and CR are whitespace, and ESC starts ISO-2022-JP escapes.
  * @param {number} byte
  */
 function isControl(byte) {

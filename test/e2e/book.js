@@ -21,7 +21,7 @@ import { unzip } from '../helpers/unzip.js';
  * @property {string[]} strings
  */
 
-/** XML entities, then OOXML `_xHHHH_`. `_x005F_` is the escape for `_`, so one left-to-right pass turns `_x005F_x0041_` back into `_x0041_`. @param {string} text */
+/** `_x005F_` is the escape for `_`, so one left-to-right pass turns `_x005F_x0041_` back into `_x0041_`. @param {string} text */
 export function unescapeCellText(text) {
   const decoded = text
     .replaceAll('&#13;', '\r')
@@ -44,7 +44,6 @@ export function readWorkbook(bytes) {
   const badParts = [];
   for (const [name, data] of files) {
     const xml = data.toString('utf8');
-    // <font> and <fill> are not formulas. A formula tag is <f> or <f ...>.
     if (xml.includes('<f>') || xml.includes('<f ') || xml.includes('inlineStr')) badParts.push(name);
   }
   return {
@@ -57,7 +56,6 @@ export function readWorkbook(bytes) {
 }
 
 /**
- * Every cell is shared-string text with numFmtId 49, empty fields are absent, and the grid equals `records`.
  * @param {Workbook} book
  * @param {string[][]} records
  */

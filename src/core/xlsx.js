@@ -1,5 +1,3 @@
-/** SpreadsheetML: package parts, styles, the shared-string table, and exact-text cells. Sheet and table XML are streamed. */
-
 import { deflateEntry, zipBlob } from './zip.js';
 import { detach } from './csv.js';
 import { autoNumber, columnName } from './excel.js';
@@ -8,10 +6,8 @@ import { autoNumber, columnName } from './excel.js';
 
 export const XLSX_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
-/** cellXfs indices in styles.xml. Table: docs/DESIGN.md, Q5. */
 export const XF = Object.freeze({ general: 0, text: 1, textWrap: 2, header: 3, headerWrap: 4, grouped: 5 });
 
-/** Dedupe bounds for the shared-string Map. Strings past either bound get a fresh index and stay out of the Map. */
 export const SST_DEDUPE = Object.freeze({ maxChars: 64, maxEntries: 500_000 });
 
 const XML_DECLARATION = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
@@ -67,10 +63,10 @@ const ENTITIES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '\r': '&#13;', _: '_x
 const LINE_BREAK = /[\n\r]/;
 
 /**
- * @param {AsyncIterable<string[][]>} batches  Records in file order.
+ * @param {AsyncIterable<string[][]>} batches
  * @param {import('./excel.js').SheetPlan} plan
- * @param {string} name  Already passed through sheetName().
- * @returns {Promise<import('./messages.js').Result<Blob>>}  Fails only with OUTPUT_TOO_LARGE.
+ * @param {string} name
+ * @returns {Promise<import('./messages.js').Result<Blob>>}
  */
 export async function writeXlsx(batches, plan, name) {
   const encoder = new TextEncoder();
@@ -92,15 +88,14 @@ export async function writeXlsx(batches, plan, name) {
 }
 
 /**
- * Text as the content of <t>, read back exactly by Excel and LibreOffice. Table: docs/DESIGN.md, Q5.
  * @param {string} text
- * @returns {string}  'a\r\nb' → 'a&#13;\nb', '_x0041_' → '_x005F_x0041_', '\u0001' → '_x0001_'
+ * @returns {string}
  */
 export function escapeText(text) {
   return text.replace(ESCAPED, (c) => ENTITIES[c] ?? `_x${c.charCodeAt(0).toString(16).toUpperCase().padStart(4, '0')}_`);
 }
 
-/** True when the first or last char is <= U+0020. Excel trims <t> without xml:space="preserve". @param {string} text @returns {boolean} */
+/** Excel trims <t> without xml:space="preserve". @param {string} text @returns {boolean} */
 export function needsPreserve(text) {
   return text.charCodeAt(0) <= 0x20 || text.charCodeAt(text.length - 1) <= 0x20;
 }
@@ -114,8 +109,6 @@ function workbookXml(name) {
 }
 
 /**
- * sheet1.xml, one chunk per batch, while the strings it introduces go to `strings` as sharedStrings.xml chunks.
- * Empty fields write no <c>, and records without cells write no <row>.
  * @param {AsyncIterable<string[][]>} batches
  * @param {import('./excel.js').SheetPlan} plan
  * @param {ReturnType<typeof handoff>} strings
@@ -198,7 +191,6 @@ function sheetHead(plan, range) {
   );
 }
 
-/** Indices into sharedStrings.xml, and the bytes of the <si> elements not yet handed on. */
 function createStringTable() {
   /** @type {Map<string, number>} */
   const known = new Map();
@@ -226,10 +218,6 @@ function createStringTable() {
   };
 }
 
-/**
- * Bytes of XML, handed on one chunk at a time. Markup goes in byte by byte and text through encodeInto, so cell
- * markup builds no strings for the collector to clear.
- */
 function createXmlBytes() {
   const encoder = new TextEncoder();
   let bytes = new Uint8Array(1 << 20);
@@ -242,12 +230,12 @@ function createXmlBytes() {
     bytes = grown;
   }
   return {
-    /** @param {string} text  ASCII only. */
+    /** @param {string} text */
     ascii(text) {
       reserve(text.length);
       for (let i = 0; i < text.length; i++) bytes[length++] = text.charCodeAt(i);
     },
-    /** @param {number} n  A non-negative integer. */
+    /** @param {number} n */
     integer(n) {
       let digits = 1;
       for (let rest = n; rest >= 10; rest = Math.floor(rest / 10)) digits++;
@@ -260,7 +248,6 @@ function createXmlBytes() {
       reserve(3 * text.length);
       length += encoder.encodeInto(text, bytes.subarray(length)).written;
     },
-    /** The bytes written since the last take(). */
     take() {
       const chunk = bytes.slice(0, length);
       length = 0;
@@ -269,10 +256,6 @@ function createXmlBytes() {
   };
 }
 
-/**
- * Hands chunks from the sheet pass to the sharedStrings.xml stream. put() settles once the consumer has taken the
- * chunk, so at most one chunk waits between the two compressors.
- */
 function handoff() {
   /** @type {((chunk: Bytes | null) => void) | null} */
   let taker = null;

@@ -1,5 +1,3 @@
-/** The worker shell. Runs the one job it receives and turns unexpected exceptions into AppError values. */
-
 import { analyze, write } from './core/convert.js';
 
 /** @import { JobRequest, ReadEvent, WriteEvent } from './protocol.js' */
@@ -34,7 +32,6 @@ async function run(request) {
 }
 
 /**
- * A progress hook that posts only when the whole percent goes up.
  * @param {(event: { type: 'progress', ratio: number }) => void} post
  * @returns {(ratio: number) => void}
  */

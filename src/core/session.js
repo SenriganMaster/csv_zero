@@ -1,5 +1,3 @@
-/** The page's state machine. update() is pure: it returns the next session and the effects main.js runs. */
-
 import { planSheet } from './excel.js';
 
 /** @import { Source, ParseChoice, Preview, Analysis, Format, OutputFile } from './convert.js' */
@@ -7,7 +5,7 @@ import { planSheet } from './excel.js';
 /** @import { SheetOptions } from './excel.js' */
 /** @import { ReadEvent, WriteEvent } from '../protocol.js' */
 
-/** @typedef {{ xlsx: boolean }} Env  Probed once at boot: CompressionStream exists. */
+/** @typedef {{ xlsx: boolean }} Env */
 
 /**
  * @typedef {(
@@ -18,14 +16,13 @@ import { planSheet } from './excel.js';
  * )} Output
  */
 /**
- * `reading.preview` starts as the previous analysis when only the choice changed. The view dims it until replaced.
  * @typedef {(
  *   | { kind: 'empty', notice: AppError | null }
  *   | { kind: 'reading', source: Source, choice: ParseChoice, preview: Preview | null, progress: number }
  *   | { kind: 'ready', source: Source, choice: ParseChoice, analysis: Analysis, autoColumns: readonly number[], output: Output }
  * )} Stage
  */
-/** @typedef {{ env: Env, header: boolean, stage: Stage }} Session  `header` is a preference that survives new files. */
+/** @typedef {{ env: Env, header: boolean, stage: Stage }} Session */
 
 /**
  * @typedef {(
@@ -42,7 +39,6 @@ import { planSheet } from './excel.js';
  * )} Msg
  */
 /**
- * main.js runs these. startRead first cancels any read and any write. startWrite first cancels any write.
  * @typedef {(
  *   | { type: 'startRead', source: Source, choice: ParseChoice }
  *   | { type: 'startWrite', format: Format, source: Source, analysis: Analysis, options: SheetOptions }
@@ -57,13 +53,12 @@ export const MAX_INPUT_BYTES = 200 * 1024 * 1024;
 /** @type {ParseChoice} */
 export const AUTO_CHOICE = Object.freeze({ encoding: 'auto', delimiter: 'auto' });
 
-/** Returns { env, header: true, stage: { kind: 'empty', notice: null } }. @param {Env} env @returns {Session} */
+/** @param {Env} env @returns {Session} */
 export function initialSession(env) {
   return { env, header: true, stage: { kind: 'empty', notice: null } };
 }
 
 /**
- * Transition table: design.md, Q8. A message that does not apply to the current stage returns the session unchanged.
  * @param {Session} session
  * @param {Msg} msg
  * @returns {[Session, Effect[]]}
@@ -137,7 +132,7 @@ export function update(session, msg) {
   }
 }
 
-/** csv: always, once ready. xlsx: env.xlsx and planSheet(...).blockers is empty. @param {Session} session @param {Format} format @returns {boolean} */
+/** @param {Session} session @param {Format} format @returns {boolean} */
 export function canWrite(session, format) {
   const { stage } = session;
   if (stage.kind !== 'ready') return false;

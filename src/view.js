@@ -1,5 +1,3 @@
-/** Writes the DOM from a Session. Its only state is the identity of the inputs behind the last table it built. */
-
 import { autoNumber, classify, columnName, planSheet } from './core/excel.js';
 import { describe, RISK_LABELS, encodingLabel, delimiterLabel, formatCount, formatBytes } from './core/messages.js';
 import { PREVIEW } from './core/preview.js';
@@ -16,7 +14,6 @@ const RISK_KINDS = /** @type {RiskKind[]} */ (Object.keys(RISK_LABELS));
 const MODE_TITLE = '自動: 先頭に0が付いていない普通の数値だけを数値として保存します。0001 のような値は文字列のまま残ります。';
 
 /**
- * Elements looked up once at boot, plus objectUrl(), which main.js owns so one object URL lives at a time.
  * @typedef {object} Refs
  * @property {HTMLElement} tool
  * @property {HTMLElement} card
@@ -145,7 +142,6 @@ export function findRefs(root, objectUrl) {
 }
 
 /**
- * The table on screen: the records and options it was built from, and its per-column elements.
  * @typedef {{ records: string[][], header: boolean, cols: number, modes: HTMLButtonElement[], badges: HTMLElement[], columns: HTMLTableColElement[] }} BuiltTable
  */
 
@@ -157,10 +153,7 @@ let shownModes = null;
 let shownPlan = null;
 /** @type {{ analysis: Analysis, header: boolean, autoColumns: readonly number[], plan: SheetPlan } | null} */
 let planned = null;
-/**
- * The source of the last ready stage. A reading stage for the same source is a re-read; a new one takes focus when ready.
- * @type {Source | null}
- */
+/** @type {Source | null} */
 let readySource = null;
 /** @type {Analysis | null} */
 let announcedAnalysis = null;
@@ -175,8 +168,6 @@ function transientOf(stage) {
 }
 
 /**
- * Reading and writing keep the card at least as tall as the state they started from, so the page below,
- * or the page embedding this one, does not jump while they run.
  * @param {HTMLElement} card
  * @param {'reading' | 'writing' | null} next
  */
@@ -189,8 +180,6 @@ function holdHeight(card, next) {
 }
 
 /**
- * Cells use textContent, never markup, because file content is untrusted. classify() tints risky data cells.
- * Each column header shows its letter, its header text, its risk count, and the 文字列 / 自動 toggle.
  * @param {Session} session
  * @param {Refs} refs
  */
@@ -286,7 +275,7 @@ export function render(session, refs) {
   }
 }
 
-/** Shows one input method and hides the other. The choice is not part of the session. @param {Refs} refs @param {'file' | 'paste'} tab */
+/** @param {Refs} refs @param {'file' | 'paste'} tab */
 export function selectTab(refs, tab) {
   const paste = tab === 'paste';
   refs.fileTab.setAttribute('aria-selected', String(!paste));
@@ -297,7 +286,7 @@ export function selectTab(refs, tab) {
   refs.pastePanel.hidden = !paste;
 }
 
-/** The drop highlight while a file is dragged over the tool. @param {Refs} refs @param {boolean} on */
+/** @param {Refs} refs @param {boolean} on */
 export function showDrag(refs, on) {
   if (on) refs.tool.dataset.drag = '1';
   else delete refs.tool.dataset.drag;
@@ -529,7 +518,7 @@ function buildTable(table, records, header, cols) {
   return { records, header, cols, modes, badges, columns };
 }
 
-/** Marks 自動 columns, and right-aligns the cells that would be saved as numbers. @param {HTMLTableElement} table @param {readonly number[]} autoColumns */
+/** @param {HTMLTableElement} table @param {readonly number[]} autoColumns */
 function renderModes(table, autoColumns) {
   if (!built) return;
   const auto = new Set(autoColumns);

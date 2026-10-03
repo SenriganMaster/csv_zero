@@ -15,7 +15,6 @@ test('a 20MB csv reaches ready and xlsx without a long frame gap', async ({ page
   console.log(`perf bytes=${csv.bytes} rows=${csv.rows} ready=${readyMs.toFixed(0)}ms xlsx=${xlsx.ms.toFixed(0)}ms maxGap=${meters.maxGap.toFixed(1)}ms frames=${meters.frames} longTasks=${meters.longCount} longTaskMs=${meters.longMs.toFixed(0)}`);
   expect(readyMs + xlsx.ms).toBeLessThan(15_000);
   expect(meters.frames).toBeGreaterThan(0);
-  // A freeze, not the 200 ms target that npm run perf holds: CI runners are slower than a laptop.
   expect(meters.maxGap).toBeLessThan(500);
   await xlsx.download.delete();
 });

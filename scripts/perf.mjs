@@ -7,7 +7,6 @@ import { writeBenchCsv } from '../test/e2e/bench-csv.js';
 import { installMeters, readMeters, timeUntilReady, timedDownload, workDir } from '../test/e2e/flow.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-/** Exits 1 on a miss: 20 MB ready + xlsx under 15 s (docs/BRIEF.md), every frame gap under 200 ms, 100 MB completes. */
 const CASES = [
   { rows: 200_000, endToEndMs: 15_000 },
   { rows: 1_000_000, endToEndMs: Infinity },

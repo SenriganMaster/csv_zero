@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 
-/** Every fixture that converts, with the Python codec and delimiter for an independent parse. @type {[string, string, string][]} */
+/** @type {[string, string, string][]} */
 export const CONVERTIBLE = [
   ['sjis-bank.csv', 'cp932', ','],
   ['excel-mangle.csv', 'cp932', ','],
@@ -24,7 +24,7 @@ export function fixture(name) {
   return new Uint8Array(fs.readFileSync(new URL(`../fixtures/${name}`, import.meta.url)));
 }
 
-/** A file Source the way main.js builds one from a dropped file. @param {string} name */
+/** @param {string} name */
 export function fileSource(name) {
   return { kind: /** @type {const} */ ('file'), blob: new Blob([fixture(name)]), name };
 }

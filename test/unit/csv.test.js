@@ -14,7 +14,6 @@ function read(chunks, delimiter = ',') {
   return { records: [...records, ...end.records], unterminatedQuoteRow: end.unterminatedQuoteRow };
 }
 
-/** Rows: design.md, Q3. Each input is named by the state it reaches and the input that follows. */
 /** @type {[string, string, string[][], number | null][]} */
 const MATRIX = [
   ['recordStart, quote', '"a"', [['a']], null],

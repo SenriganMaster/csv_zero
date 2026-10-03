@@ -11,13 +11,9 @@ import { hasPython, pythonCsv } from '../helpers/python.js';
 const hasSoffice = spawnSync('soffice', ['--version']).status === 0;
 const SKIP = !hasSoffice ? 'soffice is missing' : !hasPython ? 'python3 is missing' : false;
 const SCRATCH = fileURLToPath(new URL('../../.work/core/', import.meta.url));
-/** 'auto' makes every column 自動, so whatever autoNumber converts must display as its source text. */
 const MODES = /** @type {const} */ (['text', 'auto']);
 
-/**
- * Records the way a sheet holds them: in-cell CRLF as LF, without trailing empty fields or records.
- * @param {string[][]} records
- */
+/** @param {string[][]} records */
 function asSheet(records) {
   const rows = records.map((record) => {
     const row = record.map((field) => field.replaceAll('\r\n', '\n'));

@@ -10,11 +10,10 @@ const utf16 = (text, littleEndian) =>
   Array.from({ length: text.length }, (_, i) => text.charCodeAt(i)).flatMap((unit) =>
     littleEndian ? [unit & 0xff, unit >> 8] : [unit >> 8, unit & 0xff],
   );
-/** Long kanji fields, with 　 (U+3000) and 一 (U+4E00), whose 00 byte sits where ASCII's does in the other byte order. */
 const KANJI_LINES = '株式会社山田商事　東京本社営業部,東京都千代田区丸の内一丁目一番一号\r\n'.repeat(40);
 const PNG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52];
 
-/** Fixed pseudo-random bytes. @param {number} length */
+/** @param {number} length */
 function noise(length) {
   const bytes = new Uint8Array(length);
   let seed = 0x2545f491;

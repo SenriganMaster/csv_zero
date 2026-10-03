@@ -9,7 +9,6 @@ const out = (name) => path.join(root, 'public', name);
 const BRAND = '#0b7b61';
 const INK = '#17222c';
 
-/** The mark: a spreadsheet cell holding a 0, with Excel's fill handle at its corner. */
 const MARK = `<rect x="3.25" y="5.25" width="23" height="19" rx="2.5" fill="#fff"/>
   <rect x="10.55" y="8.55" width="8.4" height="12.4" rx="4.2" fill="none" stroke="${BRAND}" stroke-width="2.7"/>
   <rect x="22.25" y="20.25" width="6.5" height="6.5" rx="1" fill="#fff" stroke="${BRAND}" stroke-width="1.6"/>`;

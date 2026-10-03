@@ -50,7 +50,6 @@ function applyScriptHashes(html, hashes) {
   const token = '{{script-hashes}}';
   if (!html.includes(token)) return html;
   if (hashes.length > 0) return html.replaceAll(token, hashes.join(' '));
-  // The token sits between tokens that already have their own spaces.
   return html.replace(/ ?\{\{script-hashes\}\} ?/g, (match) => (
     match.startsWith(' ') && match.endsWith(' ') ? ' ' : ''
   ));

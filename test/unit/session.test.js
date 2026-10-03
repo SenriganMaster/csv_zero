@@ -314,7 +314,6 @@ describe('reset', () => {
   });
 });
 
-// These go through planSheet in core/excel.js.
 describe('writeRequested and canWrite', () => {
   test('ready and writable: writing, with the current options', () => {
     const from = ready({ kind: 'idle' }, { autoColumns: [1] }, { header: false });

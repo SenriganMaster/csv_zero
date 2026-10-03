@@ -1,22 +1,20 @@
-/** What Excel does with text: CSV mangling, limits, widths, names, and the plan for one sheet. */
-
 export const LIMITS = Object.freeze({ rows: 1_048_576, cols: 16_384, cellChars: 32_767 });
 
-/** @typedef {'formula' | 'leadingZero' | 'exponent' | 'date' | 'numberFormat'} RiskKind  In priority order. */
+/** @typedef {'formula' | 'leadingZero' | 'exponent' | 'date' | 'numberFormat'} RiskKind */
 /** @typedef {Record<RiskKind, number>} RiskCounts */
-/** @typedef {{ header: boolean, autoColumns: readonly number[] }} SheetOptions  Unlisted columns are 文字列. */
+/** @typedef {{ header: boolean, autoColumns: readonly number[] }} SheetOptions */
 
-/** @typedef {{ width: number, auto: boolean, risks: RiskCounts }} PlannedColumn  Width in Excel units. Counts cover data rows. */
-/** @typedef {{ v: string, xf: 0 | 5 }} AutoNumber  The `<v>` text and the cellXfs index (0 General, 5 `#,##0`). */
+/** @typedef {{ width: number, auto: boolean, risks: RiskCounts }} PlannedColumn */
+/** @typedef {{ v: string, xf: 0 | 5 }} AutoNumber */
 /**
  * @typedef {object} SheetPlan
- * @property {number} rows  Records written, header included.
+ * @property {number} rows
  * @property {number} cols
- * @property {boolean} header  Bold row 1 and a frozen pane.
+ * @property {boolean} header
  * @property {PlannedColumn[]} columns
- * @property {RiskCounts} risks  What double-clicking the CSV would change, all columns, data rows only.
+ * @property {RiskCounts} risks
  * @property {number} riskTotal
- * @property {import('./messages.js').AppError[]} blockers  Non-empty means xlsx cannot be written. CSV still can.
+ * @property {import('./messages.js').AppError[]} blockers
  * @property {import('./messages.js').AppError[]} warnings
  */
 
@@ -26,7 +24,6 @@ const RISK_KINDS = ['formula', 'leadingZero', 'exponent', 'date', 'numberFormat'
 const LEADING_ZERO = /^-?0\d+(\.\d+)?$/;
 const EXPONENT = /^-?(\d{12,}|\d+(\.\d+)?[eE][+-]?\d+)$/;
 const NUMBER_FORMAT = /^(-?\d+\.\d*0|\(\d+(\.\d+)?\))$/;
-/** After a leading minus, Excel reads these as a number rather than a formula. Broad, so doubt never counts as formula. */
 const PLAIN_NUMBER = /^(\d[\d,]*(\.\d*)?|\.\d+)([eE][+-]?\d+)?%?$/;
 const MONTH_DAY = /^(\d{1,2})[-/](\d{1,2})$/;
 const YEAR_MONTH = /^(\d{4})[-/](\d{1,2})$/;
@@ -44,8 +41,6 @@ const SHEET_NAME_FORBIDDEN = /[\\/?*[\]:\u0000-\u001F]/g;
 const SHEET_NAME_CHARS = 31;
 
 /**
- * What ja-JP Excel would visibly change if this text sat in a CSV opened by double-click.
- * The first matching kind wins (rule table: design.md, Q4). Counts only changes we are sure of.
  * @param {string} text
  * @returns {RiskKind | null}
  */
@@ -62,11 +57,8 @@ export function classify(text) {
 }
 
 /**
- * A numeric cell for a 自動 column, or null when the cell must stay text. Only values whose Excel display equals
- * the text qualify, so 自動 never changes what the user sees (rules: docs/DESIGN.md, Q5).
  * @param {string} text
- * @returns {AutoNumber | null}  '1200' → { v: '1200', xf: 0 }, '1,234' → { v: '1234', xf: 5 }, '-3.5' → { v: '-3.5', xf: 0 },
- *   '0012' → null, '1.50' → null, '1E5' → null, '123456789012' → null, '-0' → null
+ * @returns {AutoNumber | null}
  */
 export function autoNumber(text) {
   if (text.length <= GENERAL_CHARS && (INTEGER.test(text) || DECIMAL.test(text))) {
@@ -77,7 +69,7 @@ export function autoNumber(text) {
   return v.replace('-', '').length <= PRECISE_DIGITS && String(Number(v)) === v ? { v, xf: 5 } : null;
 }
 
-/** The widest line, counting East Asian Wide and Fullwidth characters as 2. @param {string} text @returns {number} */
+/** @param {string} text @returns {number} */
 export function displayWidth(text) {
   let widest = 0;
   let line = 0;
@@ -94,7 +86,7 @@ export function displayWidth(text) {
   return line > widest ? line : widest;
 }
 
-/** 0 → 'A', 25 → 'Z', 26 → 'AA', 16383 → 'XFD'. @param {number} index @returns {string} */
+/** @param {number} index @returns {string} */
 export function columnName(index) {
   let name = '';
   for (let n = index + 1; n > 0; n = Math.floor((n - 1) / 26)) name = String.fromCharCode(0x41 + ((n - 1) % 26)) + name;
@@ -118,8 +110,6 @@ export function sheetName(fileName) {
 }
 
 /**
- * Everything the UI and the xlsx writer need to know about the sheet under these options.
- * Pure and O(cols), so the header and 自動 toggles never touch the worker.
  * @param {import('./convert.js').Analysis} analysis
  * @param {SheetOptions} options
  * @returns {SheetPlan}
@@ -151,7 +141,6 @@ export function noRisks() {
 }
 
 /**
- * `^[=+@].`, or `^-.` unless the rest reads as a number.
  * @param {string} text
  * @param {number} first
  */
@@ -196,10 +185,7 @@ function isLeapYear(year) {
   return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
 }
 
-/**
- * Unicode's East Asian Wide and Fullwidth blocks, approximated by ranges (after Markus Kuhn's wcwidth).
- * @param {number} code
- */
+/** @param {number} code */
 function isWide(code) {
   return (
     code >= 0x1100 &&
@@ -220,7 +206,7 @@ function isWide(code) {
   );
 }
 
-/** min(60, max(8, ceil(width × 1.1) + 2)), in integers because 10 * 1.1 is 11.000000000000002. @param {number} width */
+/** @param {number} width */
 function columnWidth(width) {
   return Math.min(60, Math.max(8, Math.ceil((width * 11) / 10) + 2));
 }

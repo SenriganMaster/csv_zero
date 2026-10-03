@@ -1,5 +1,3 @@
-/** A CP932 encoder for fixtures and tests, built by inverting the platform's WHATWG Shift_JIS decoder. */
-
 const decoder = new TextDecoder('shift_jis');
 const TRAILS = [...range(0x40, 0x7e), ...range(0x80, 0xfc)];
 // WHATWG's encoder skips the NEC-selected IBM rows (ED, EE); their characters also sit in FA-FC, which Windows uses.

@@ -1,5 +1,3 @@
-/** Main-thread entry: boot, the job runner, the session store and every DOM event. It never reads file bytes. */
-
 import { initialSession, update } from './core/session.js';
 import { findRefs, render, selectTab, showDrag } from './view.js';
 
@@ -18,8 +16,6 @@ if (!(current instanceof HTMLScriptElement)) {
 const bundleUrl = current.src;
 
 /**
- * Fetches the worker script once at boot and serves it from a blob: URL, so jobs still start after the network
- * drops. Falls back to the plain URL when the fetch fails.
  * @param {string} base
  * @returns {Promise<string>}
  */
@@ -38,8 +34,6 @@ async function preloadWorker(base) {
 }
 
 /**
- * Runs one job in a fresh worker. Events stop after the terminal event or cancel(), and the worker is terminated.
- * A worker `error` event arrives as { type: 'failed', error: { code: 'WORKER_FAILED', detail } }.
  * @template {JobRequest} R
  * @param {Promise<string>} workerUrl
  * @param {R} request
@@ -88,7 +82,7 @@ function runJob(workerUrl, request, onEvent) {
 /** @type {{ file: OutputFile, url: string } | null} */
 let liveUrl = null;
 
-/** The one object URL, shared by the scripted download and the 「保存する」 link. @param {OutputFile} file @returns {string} */
+/** @param {OutputFile} file @returns {string} */
 function objectUrl(file) {
   if (liveUrl?.file !== file) {
     if (liveUrl) URL.revokeObjectURL(liveUrl.url);
@@ -107,11 +101,7 @@ function releaseUrl(session) {
   }
 }
 
-/**
- * Clicks a hidden <a download>. A browser may block it inside a cross-origin iframe when the click that started
- * the export is seconds old, so the written state also shows a real 「保存する」 link.
- * @param {OutputFile} file
- */
+/** @param {OutputFile} file */
 function download(file) {
   const link = document.createElement('a');
   link.href = objectUrl(file);
@@ -123,7 +113,6 @@ function download(file) {
 }
 
 /**
- * Owns the read and write job handles. dispatch(msg) runs update(), then the effects in order, then render().
  * @param {Session} initial
  * @param {Refs} refs
  * @param {Promise<string>} workerUrl
@@ -186,8 +175,6 @@ function createStore(initial, refs, workerUrl) {
 }
 
 /**
- * Every control becomes a Msg here: drop zone, file input, paste box, selects, header switch, column-mode buttons
- * (delegated on the table), write, cancel, re-download and reset.
  * @param {Refs} refs
  * @param {ReturnType<typeof createStore>} store
  */
@@ -316,7 +303,6 @@ function setupEmbed() {
   }).observe(root);
 }
 
-/** The 「コードをコピー」 button beside the iframe snippet. Without clipboard access it selects the code instead. */
 function setupCopy() {
   const button = document.querySelector('[data-testid="copy-embed"]');
   const code = document.querySelector('[data-ref="embed-code"]');

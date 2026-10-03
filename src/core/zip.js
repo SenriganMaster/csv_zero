@@ -1,6 +1,4 @@
-/** ZIP container over the browser's gzip CompressionStream. Deflate and CRC-32 are both native. No Zip64. */
-
-/** @typedef {Uint8Array<ArrayBuffer>} Bytes  Blob parts and CompressionStream chunks must not sit on a SharedArrayBuffer. */
+/** @typedef {Uint8Array<ArrayBuffer>} Bytes */
 /** @typedef {{ name: string, data: Bytes[], crc: number, size: number, compressedSize: number }} ZipEntry */
 
 const GZIP_TRAILER = 8;
@@ -10,7 +8,6 @@ const FNAME = 8;
 const FCOMMENT = 16;
 const DEFLATE = 8;
 const VERSION = 20;
-/** 1980-01-01 in MS-DOS date format; the time field stays 00:00:00. */
 const DOS_DATE = (1 << 5) | 1;
 /** 0xFFFFFFFF itself tells readers to look for Zip64 fields, so it is out of range too. */
 const ZIP32_LIMIT = 0xffffffff;
@@ -19,9 +16,7 @@ const CENTRAL_HEADER = 46;
 const END_OF_DIRECTORY = 22;
 
 /**
- * Compresses one entry while a second task drains the readable side. The next chunk is produced while the
- * previous one compresses, and is written only once that one is consumed, so at most two chunks are in flight.
- * @param {string} name  ASCII only, so the UTF-8 name flag stays off.
+ * @param {string} name
  * @param {AsyncIterable<Bytes> | Iterable<Bytes>} chunks
  * @returns {Promise<ZipEntry>}
  */
@@ -53,11 +48,9 @@ export async function deflateEntry(name, chunks) {
 }
 
 /**
- * Local file headers (CRC and sizes are known, so there are no data descriptors), entry data, central directory, EOCD.
- * The DOS time is fixed at 1980-01-01 00:00, so equal inputs give equal bytes.
  * @param {ZipEntry[]} entries
  * @param {string} type
- * @returns {import('./messages.js').Result<Blob>}  OUTPUT_TOO_LARGE when a size or an offset reaches 2^32.
+ * @returns {import('./messages.js').Result<Blob>}
  */
 export function zipBlob(entries, type) {
   const encoder = new TextEncoder();
@@ -93,7 +86,7 @@ export function zipBlob(entries, type) {
 /**
  * @param {ZipEntry} entry
  * @param {Uint8Array} name
- * @param {number} offset  Where the entry's local header starts.
+ * @param {number} offset
  */
 function centralHeader(entry, name, offset) {
   const header = new Uint8Array(CENTRAL_HEADER + name.length);
@@ -107,7 +100,6 @@ function centralHeader(entry, name, offset) {
 }
 
 /**
- * The run that local and central headers share: version needed, flags, method, time, date, CRC, both sizes, name length.
  * @param {DataView} view
  * @param {number} at
  * @param {ZipEntry} entry
@@ -147,7 +139,7 @@ function byteAt(parts, index) {
   return range(parts, index, index + 1)[0];
 }
 
-/** The bytes from `start` to `end` across parts, copied. @param {Bytes[]} parts @param {number} start @param {number} end */
+/** @param {Bytes[]} parts @param {number} start @param {number} end */
 function range(parts, start, end) {
   const out = new Uint8Array(end - start);
   let at = 0;
@@ -158,7 +150,7 @@ function range(parts, start, end) {
   return out;
 }
 
-/** Views of the bytes from `start` to `end` across parts, without copying. @param {Bytes[]} parts @param {number} start @param {number} end */
+/** @param {Bytes[]} parts @param {number} start @param {number} end */
 function slice(parts, start, end) {
   /** @type {Bytes[]} */
   const out = [];

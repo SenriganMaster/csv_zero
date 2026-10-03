@@ -5,7 +5,7 @@ import { assertTextWorkbook, readWorkbook } from './book.js';
 import { downloadBytes, openApp, statText, uploadFixture } from './flow.js';
 import { delimiterFromLabel, encodingFromLabel } from './records.js';
 
-/** Python codec → the TextDecoder label the page should report, and whether it should say BOM. @type {Record<string, [string, boolean]>} */
+/** @type {Record<string, [string, boolean]>} */
 const REPORTED = { cp932: ['shift_jis', false], 'utf-8-sig': ['utf-8', true], 'utf-8': ['utf-8', false], 'utf-16': ['utf-16le', true] };
 
 test.skip(!hasPython, 'python3 is missing');

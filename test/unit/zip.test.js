@@ -10,7 +10,6 @@ const NO_PYTHON = hasPython ? false : 'python3 is missing';
 /** @param {Uint8Array[]} parts */
 const concat = (parts) => Buffer.concat(parts);
 
-/** A gzip stream with every optional header field set, delivered one byte per chunk. */
 class FlaggedGzip {
   constructor() {
     /** @type {Uint8Array[]} */

@@ -1,18 +1,16 @@
-/** CSV syntax: the RFC 4180 reader, delimiter sniffing, and the writer's quoting rule. */
-
 /** @typedef {',' | '\t' | ';'} Delimiter */
 /** @typedef {{ delimiter: Delimiter, singleColumn: boolean }} DelimiterVerdict */
-/** @typedef {'recordStart' | 'fieldStart' | 'unquoted' | 'quoted' | 'quoteInQuoted' | 'afterCR'} ReaderState  Table: design.md, Q3. */
+/** @typedef {'recordStart' | 'fieldStart' | 'unquoted' | 'quoted' | 'quoteInQuoted' | 'afterCR'} ReaderState */
 /**
  * @typedef {object} CsvReader
- * @property {(text: string) => string[][]} push  Feeds the next chunk. Returns the records it completed, in order.
- * @property {() => { records: string[][], unterminatedQuoteRow: number | null }} finish  EOF. Drops trailing blank records.
+ * @property {(text: string) => string[][]} push
+ * @property {() => { records: string[][], unterminatedQuoteRow: number | null }} finish
  */
 
 const QUOTE = 0x22;
 const LF = 0x0a;
 const CR = 0x0d;
-/** @type {readonly Delimiter[]}  Full ties go to tab, comma, semicolon, since a tab inside text is rarer than a comma. */
+/** @type {readonly Delimiter[]} */
 const CANDIDATES = ['\t', ',', ';'];
 const SAMPLE_RECORDS = 50;
 const NEEDS_QUOTES = /[",\r\n]|^[ \t]|[ \t]$/;
@@ -27,13 +25,12 @@ export function createCsvReader(delimiter) {
   let state = 'recordStart';
   /** @type {string[]} */
   let record = [];
-  /** Text of the current field from earlier chunks, or the quoted part of a field still open. */
   let pending = '';
   let heldBlank = 0;
   let released = 0;
   let quoteRow = 0;
 
-  /** Releases the held blank records, then this one. @param {string[][]} out */
+  /** @param {string[][]} out */
   function endRecord(out) {
     for (; heldBlank > 0; heldBlank--) {
       out.push(['']);
@@ -169,10 +166,9 @@ export function createCsvReader(delimiter) {
 }
 
 /**
- * Rule table: design.md, Q2. Parses the sample with each candidate through createCsvReader.
- * @param {string} sample  The decoded first 64 KiB.
- * @param {boolean} complete  The sample is the whole file, so its last record is not cut off.
- * @param {string} fileName  `.tsv` and `.csv` break ties.
+ * @param {string} sample
+ * @param {boolean} complete
+ * @param {string} fileName
  * @returns {DelimiterVerdict}
  */
 export function detectDelimiter(sample, complete, fileName) {
@@ -189,8 +185,6 @@ export function detectDelimiter(sample, complete, fileName) {
 }
 
 /**
- * The most common field count over the sample's first records, and how many records have another count. A count,
- * not a share: a header that the delimiter does not split is one record, however many rows follow it.
  * @param {string} sample
  * @param {boolean} complete
  * @param {Delimiter} delimiter
@@ -217,8 +211,6 @@ function shapeOf(sample, complete, delimiter) {
 }
 
 /**
- * One output record, comma-separated and CRLF-terminated. A field is quoted iff it contains `,` `"` CR or LF,
- * or starts or ends with a space or tab. `"` is doubled. Ragged records stay ragged.
  * @param {readonly string[]} fields
  * @returns {string}
  */
@@ -232,14 +224,14 @@ export function csvRecord(fields) {
   return `${line}\r\n`;
 }
 
-/** A blank line reads as one empty field. @param {readonly string[]} record */
+/** @param {readonly string[]} record */
 export function isBlank(record) {
   return record.length === 1 && record[0] === '';
 }
 
 /**
- * A copy of a field for keeping past its batch. A field is a slice of its decoded chunk, and engines keep the whole
- * chunk alive for as long as any slice of it lives. Prepending flattens into a new string, which slice(1) then cuts.
+ * A field is a slice of its decoded chunk, and engines keep the whole chunk alive for as long as any slice of it
+ * lives. Prepending flattens into a new string, which slice(1) then cuts.
  * @param {string} field
  */
 export function detach(field) {

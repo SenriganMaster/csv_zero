@@ -1,4 +1,3 @@
-/** ZIP reader: central directory for names and sizes, inflateRawSync for method 8. */
 import { inflateRawSync } from 'node:zlib';
 
 const EOCD_SIG = 0x06054b50;
@@ -42,7 +41,7 @@ export function unzip(input) {
   return files;
 }
 
-/** EOCD sits at the end; the comment length is what distinguishes a real record from a coincidental signature. @param {Buffer} zip */
+/** @param {Buffer} zip */
 function findEocd(zip) {
   const min = Math.max(0, zip.length - 22 - 65535);
   for (let at = zip.length - 22; at >= min; at--) {

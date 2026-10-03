@@ -1,9 +1,6 @@
-/** Errors are values. This module owns the error union and every Japanese string the page builds at runtime. */
-
 import { columnName } from './excel.js';
 
 /**
- * Rows and columns are 0-based here. describe() prints Excel row numbers and column letters.
  * @typedef {(
  *   | { code: 'EMPTY_FILE' } | { code: 'FILE_TOO_LARGE', bytes: number }
  *   | { code: 'NOT_CSV_XLSX' } | { code: 'NOT_CSV_XLS' } | { code: 'NOT_CSV_BINARY' }
@@ -37,7 +34,6 @@ const ENCODING_NAMES = {
 const DELIMITER_NAMES = { ',': 'カンマ（,）', '\t': 'タブ', ';': 'セミコロン（;）' };
 
 /**
- * The sentence shown for an error. Wording table: design.md, Q9.
  * @param {AppError} error
  * @returns {string}
  */
@@ -82,7 +78,7 @@ export function describe(error) {
   }
 }
 
-/** Key order is display order. @type {Record<import('./excel.js').RiskKind, { short: string, label: string, example: string }>} */
+/** @type {Record<import('./excel.js').RiskKind, { short: string, label: string, example: string }>} */
 export const RISK_LABELS = {
   formula: { short: '数式化', label: '数式として扱われる', example: '=SUM(A1)、+81-90-1234-5678 → 計算される' },
   leadingZero: { short: '先頭0', label: '先頭の0が消える', example: '0001 → 1' },
@@ -91,28 +87,27 @@ export const RISK_LABELS = {
   numberFormat: { short: '表記変化', label: '数値になり表記が変わる', example: '1.50 → 1.5' },
 };
 
-/** 'Shift_JIS（CP932）', 'UTF-8（BOM付き）', 'UTF-16 LE'. @param {import('./text.js').EncodingVerdict} verdict @returns {string} */
+/** @param {import('./text.js').EncodingVerdict} verdict @returns {string} */
 export function encodingLabel(verdict) {
   if (verdict.asciiOnly) return 'ASCII（英数字・記号のみ）';
   return verdict.bom ? `${ENCODING_NAMES[verdict.encoding]}（BOM付き）` : ENCODING_NAMES[verdict.encoding];
 }
 
-/** 'カンマ（,）', 'タブ', 'セミコロン（;）'. @param {import('./csv.js').Delimiter} delimiter @returns {string} */
+/** @param {import('./csv.js').Delimiter} delimiter @returns {string} */
 export function delimiterLabel(delimiter) {
   return DELIMITER_NAMES[delimiter];
 }
 
-/** '1,234'. @param {number} n @returns {string} */
+/** @param {number} n @returns {string} */
 export function formatCount(n) {
   return COUNT.format(n);
 }
 
-/** '20.3 MB'. @param {number} bytes @returns {string} */
+/** @param {number} bytes @returns {string} */
 export function formatBytes(bytes) {
   if (bytes < 1024) return `${bytes} B`;
   let value = bytes / 1024;
   let unit = 0;
-  // 1023.95 and up would print as 1024.0, so it moves to the next unit.
   for (; value >= 1023.95 && unit < BYTE_UNITS.length - 1; unit++) value /= 1024;
   return `${value.toFixed(1)} ${BYTE_UNITS[unit]}`;
 }

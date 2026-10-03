@@ -1,4 +1,3 @@
-/** Python's zipfile, ElementTree and csv modules, as readers that share no code with src/. */
 import { spawnSync } from 'node:child_process';
 
 export const hasPython = spawnSync('python3', ['--version']).status === 0;
@@ -43,10 +42,8 @@ json.dump([row or [''] for row in csv.reader(io.StringIO(text, newline=''), deli
 `;
 
 /**
- * @typedef {{ s: string | null, t: string | null, v: string | null, text?: string }} Cell  text: the resolved shared string.
+ * @typedef {{ s: string | null, t: string | null, v: string | null, text?: string }} Cell
  * @typedef {{ bad: string | null, entries: [string, number, number][], parts: Record<string, string>, strings: string[], cells: Record<string, Cell> }} Archive
- *   bad: what zipfile.testzip() returns, the first entry whose CRC fails. entries: name, method, size.
- *   strings and cells stay empty unless the archive is an xlsx.
  */
 
 /** @param {Blob} blob @returns {Promise<Archive>} */
@@ -55,9 +52,8 @@ export async function readZip(blob) {
 }
 
 /**
- * Records as Python's csv module reads them, with a blank line as [''] like ours.
  * @param {Uint8Array} bytes
- * @param {string} encoding  A Python codec name, such as cp932 or utf-8-sig.
+ * @param {string} encoding
  * @param {string} delimiter
  * @returns {string[][]}
  */
@@ -66,7 +62,6 @@ export function pythonCsv(bytes, encoding, delimiter) {
 }
 
 /**
- * The records a sheet should hold for a source file: pythonCsv less its blank lines at the end.
  * @param {Uint8Array} bytes
  * @param {string} encoding
  * @param {string} delimiter
