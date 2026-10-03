@@ -1,0 +1,24 @@
+{
+  "name": "csv-zero",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "CSVの先頭の0が消えないよう全セル文字列のxlsxに変換する静的Webツール",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "serve": "node scripts/serve.mjs deploy 8080",
+    "typecheck": "tsc -p tsconfig.json",
+    "test:unit": "node --test test/unit/",
+    "test:e2e": "playwright test",
+    "test": "npm run typecheck && npm run test:unit && npm run test:e2e",
+    "screens": "node scripts/screens.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "esbuild": "0.28.2",
+    "typescript": "7.0.2"
+  }
+}
