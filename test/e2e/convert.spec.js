@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { fixture } from '../helpers/fixtures.js';
 import { assertTextWorkbook, readWorkbook } from './book.js';
-import { downloadBytes, openApp, statText, uploadFixture } from './flow.js';
-import { crlfRecordEnds, delimiterFromLabel, encodingFromLabel, recordsFromBytes } from './records.js';
+import { downloadBytes, openApp, uploadFixture } from './flow.js';
+import { crlfRecordEnds, recordsFromBytes } from './records.js';
 
 /** @param {import('./book.js').Workbook} book @param {string} ref */
 function textAt(book, ref) {
@@ -41,11 +41,7 @@ test('tab.tsv keeps 1,000 in one cell', async ({ page }) => {
   await openApp(page);
   await uploadFixture(page, 'tab.tsv');
   await expect(page.locator('[data-stat="delimiter"]')).toHaveText('タブ');
-  const records = recordsFromBytes(
-    fixture('tab.tsv'),
-    encodingFromLabel(await statText(page, 'encoding')),
-    delimiterFromLabel(await statText(page, 'delimiter')),
-  );
+  const records = recordsFromBytes(fixture('tab.tsv'), 'utf-8', '\t');
   const book = readWorkbook(await downloadBytes(page, 'download-xlsx'));
   assertTextWorkbook(book, records);
   expect(book.cells.filter((cell) => cell.text === '1,000')).toHaveLength(1);
@@ -54,11 +50,7 @@ test('tab.tsv keeps 1,000 in one cell', async ({ page }) => {
 test('quoted newlines keep LF and CRLF', async ({ page }) => {
   await openApp(page);
   await uploadFixture(page, 'quoted-newline.csv');
-  const records = recordsFromBytes(
-    fixture('quoted-newline.csv'),
-    encodingFromLabel(await statText(page, 'encoding')),
-    delimiterFromLabel(await statText(page, 'delimiter')),
-  );
+  const records = recordsFromBytes(fixture('quoted-newline.csv'), 'utf-8', ',');
   const book = readWorkbook(await downloadBytes(page, 'download-xlsx'));
   assertTextWorkbook(book, records);
   expect(textAt(book, 'B2')).toBe('line1\r\nline2');
@@ -68,11 +60,7 @@ test('quoted newlines keep LF and CRLF', async ({ page }) => {
 test('CSV download is UTF-8 BOM with CRLF and the same records', async ({ page }) => {
   await openApp(page);
   await uploadFixture(page, 'sjis-bank.csv');
-  const records = recordsFromBytes(
-    fixture('sjis-bank.csv'),
-    encodingFromLabel(await statText(page, 'encoding')),
-    delimiterFromLabel(await statText(page, 'delimiter')),
-  );
+  const records = recordsFromBytes(fixture('sjis-bank.csv'), 'shift_jis', ',');
   const bytes = await downloadBytes(page, 'download-csv');
   expect([...bytes.subarray(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
   expect(crlfRecordEnds(new TextDecoder('utf-8').decode(bytes))).toBe(true);

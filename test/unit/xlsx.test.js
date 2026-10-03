@@ -4,7 +4,7 @@ import { analyze, write } from '../../src/core/convert.js';
 import { columnName } from '../../src/core/excel.js';
 import { escapeText, needsPreserve, XLSX_TYPE } from '../../src/core/xlsx.js';
 import { CONVERTIBLE, fileSource, fixture } from '../helpers/fixtures.js';
-import { hasPython, pythonCsv, readZip } from '../helpers/python.js';
+import { hasPython, readZip, sheetRecords } from '../helpers/python.js';
 
 const NO_PYTHON = hasPython ? false : 'python3 is missing';
 const AUTO = /** @type {const} */ ({ encoding: 'auto', delimiter: 'auto' });
@@ -67,8 +67,7 @@ describe('escapeText and needsPreserve', () => {
 describe('write xlsx', { skip: NO_PYTHON }, () => {
   for (const [name, codec, delimiter] of CONVERTIBLE) {
     test(`${name}: every cell resolves to the source text, as text`, async () => {
-      const records = pythonCsv(fixture(name), codec, delimiter);
-      while (records.length > 0 && records.at(-1)?.join('') === '' && records.at(-1)?.length === 1) records.pop();
+      const records = sheetRecords(fixture(name), codec, delimiter);
       const { analysis, archive } = await toXlsx(fileSource(name));
       assert.equal(analysis.settings.delimiter, delimiter);
       assert.equal(analysis.rows, records.length);

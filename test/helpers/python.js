@@ -65,6 +65,18 @@ export function pythonCsv(bytes, encoding, delimiter) {
   return JSON.parse(python(READ_CSV, [encoding, delimiter], bytes));
 }
 
+/**
+ * The records a sheet should hold for a source file: pythonCsv less its blank lines at the end.
+ * @param {Uint8Array} bytes
+ * @param {string} encoding
+ * @param {string} delimiter
+ */
+export function sheetRecords(bytes, encoding, delimiter) {
+  const records = pythonCsv(bytes, encoding, delimiter);
+  while (records.length > 0 && records.at(-1)?.join('') === '' && records.at(-1)?.length === 1) records.pop();
+  return records;
+}
+
 /** @param {string} script @param {string[]} args @param {Uint8Array} input */
 function python(script, args, input) {
   const result = spawnSync('python3', ['-c', script, ...args], { input, maxBuffer: 1 << 28 });
