@@ -73,11 +73,12 @@ Option changes route by cost. Header and 自動 toggles call `planSheet` on the 
 
 - Measured on this box with Node 20.19, a 22.7 MB CSV of 200k rows × 10 columns parses in 189 ms with a minimal `charCodeAt` scanner. The classifier's fast path over its 2M fields takes 157 ms, and Shift_JIS decodes at 73 ms per 20 MB. A read job should take about 0.5 s (estimate).
 - 2M inline-string cells make 139 MB of XML. Building and encoding it takes 0.78 s, and native gzip takes 1.75 s down to 9.7 MB. Shared strings write less XML per cell (`<c r="B7" s="1" t="s"><v>17</v></c>` plus one `<si>` per distinct value), so a 20 MB write job should take about 3 s or less (estimate, to be measured by the perf run).
-- 100 MB costs about five times that. Worker memory is one loop turn's working set, about 10 MB, plus the compressed output, about 10 MB for 20 MB of input and 45 MB for 100 MB (estimates scaled from the measured 9.7 MB). The input is never held whole, and main holds only the `Analysis`.
+- 100 MB costs about five times that. Worker memory is one loop turn's working set, about 10 MB, plus the compressed output, about 10 MB for 20 MB of input and 45 MB for 100 MB (estimates scaled from the measured 9.7 MB). A write job adds the shared-string dedupe `Map`, which reached about 40 MB for a 20 MB input in Node (measured). The input is never held whole, and main holds only the `Analysis`.
+- Measured in Node 20.19 on the implemented core, 200k rows × 10 columns: a 20.1 MB UTF-8 file analyzes in 0.74-0.79 s and writes xlsx in 3.55-3.76 s; a 23.0 MB Shift_JIS file takes 0.95-0.98 s and 4.47-4.66 s. Sheet and string XML go straight into byte buffers, because building a string per cell spent 1.6 s in garbage collection.
 
 ### Encoding and delimiter detection (Q2)
 
-The rules run in order and the first match decides. A forced encoding still runs rules 1-3 and 7, so a binary file stays rejected.
+The rules run in order and the first match decides. Rules 1-7 run whatever the choice, so a binary file stays rejected, and a UTF-16 file is recognized by rules 5-6 before rule 7 can mistake its NUL bytes for binary. A forced encoding then replaces the verdict of rules 4-10, so it never rejects a file that 自動 accepts.
 
 | # | Test | Result |
 |---|---|---|
@@ -157,7 +158,7 @@ There is no theme or docProps part. Small parts are stored or deflated, whicheve
 
 **Shared strings, not inline strings.** Apple Numbers and the iOS Quick Look preview show `t="inlineStr"` cells as empty (box/spout#53, citing XlsxWriter's docs), and part of the audience opens the file on a Mac or a phone. Every text cell is therefore `<c r="B7" s="1" t="s"><v>17</v></c>`, and string 17 is the eighteenth `<si>` in `xl/sharedStrings.xml`. The string table is written while the sheet is written, so `<sst>` carries no `count` and no `uniqueCount`. Both are optional in ECMA-376, and Excel reads a table without them (ClosedXML discussion #2023). Each `<si>` is `<si><t>…</t></si>` with the escaping below.
 
-Dedupe keeps the table small for repeated codes, names and prefectures. A `Map` from exact text to index is consulted for strings of at most `SST_DEDUPE.maxChars` characters (64) while it holds fewer than `SST_DEDUPE.maxEntries` keys (500,000). A string that misses the map gets a new index and a new `<si>`, and goes into the map only while both limits hold. Past the limits the table may contain duplicates, which is valid because readers resolve indices and never require uniqueness. Memory stays bounded and no file fails because it has too many distinct values.
+Dedupe keeps the table small for repeated codes, names and prefectures. A `Map` from exact text to index is consulted for every string of at most `SST_DEDUPE.maxChars` characters (64). A string that misses the map gets a new index and a new `<si>`, and goes into the map only while it holds fewer than `SST_DEDUPE.maxEntries` keys (500,000). Lookups continue after the map stops growing. Past the limits the table may contain duplicates, which is valid because readers resolve indices and never require uniqueness. Memory stays bounded and no file fails because it has too many distinct values.
 
 | xf | numFmtId | Font | Wrap | Used for |
 |---|---|---|---|---|
@@ -182,8 +183,8 @@ sheet1.xml follows schema order. It starts with `<dimension ref="A1:{last}{rows}
 | first or last char at or below U+0020 | `<t xml:space="preserve">` | Excel trims otherwise |
 | leading `=` `+` `-` `@` | unchanged | a shared-string cell has no `<f>`, so nothing evaluates |
 
-- Widths are `min(60, max(8, ceil(w × 1.1) + 2))`, where w is the widest line over all rows, with East Asian Wide and Fullwidth counted as 2.
-- The sheet name drops the last extension and replaces `\ / ? * [ ] :` and C0 controls with `_`. It trims `'` at both ends and cuts to 31 UTF-16 units without splitting a surrogate pair. An empty name becomes `Sheet1`, and `History` in any case becomes `History_`.
+- Widths are `min(60, max(8, ceil(w × 11 / 10) + 2))` in integer arithmetic, where w is the widest line over all rows, with East Asian Wide and Fullwidth counted as 2. Floating point would make `10 × 1.1` round up to 12.
+- The sheet name drops the last extension and replaces `\ / ? * [ ] :` and C0 controls with `_`. It cuts to 31 UTF-16 units without splitting a surrogate pair, then trims `'` at both ends, so the cut cannot leave a trailing `'`. An empty name becomes `Sheet1`, and `History` in any case becomes `History_`.
 - 文字列, the default, is everything above. 自動 makes a data cell numeric only when Excel would display the number exactly as the text, so 自動 never changes what the user sees. `autoNumber(text)` returns `{ v, xf }` or null. It accepts `-?(0|[1-9]\d*)` when the text is at most 11 characters, and `-?(0|[1-9]\d*)\.\d*[1-9]` when the text is at most 11 characters and has at most 15 significant digits, both as xf 0 (General shows at most 11 characters before it switches to exponent notation). It accepts `-?[1-9]\d{0,2}(,\d{3})+` with at most 15 digits as xf 5, whose `#,##0` format redisplays the separators. `v` is the text without commas, and `String(Number(v)) === v` must hold, which rejects `-0`. Everything else, including `0012`, `1.50`, `1E5` and `+5`, stays a text cell. The header stays bold text, and the `<col>` of a 自動 column has no style. `autoColumns` lists exceptions only, so all-text is the state that exists before anyone acts (per type-system-discipline).
 - Rows over 1,048,576, columns over 16,384, or any cell over 32,767 UTF-16 units block xlsx, with the reason shown under the disabled button. CSV stays available, and nothing is truncated.
 
@@ -198,7 +199,7 @@ The types live in `protocol.js`. Each worker receives exactly one `JobRequest`.
 - `{ type: 'read', source, choice }` streams `progress` and at most one `preview`, then exactly one `done { analysis }` or `failed { error }`.
 - `{ type: 'write', format, source, analysis, options }` streams `progress`, then exactly one `done { file }` or `failed { error }`.
 
-`runJob(workerUrl, request, onEvent)` spawns the worker, posts the request, forwards events, and terminates the worker after the terminal event. `cancel()` clears a closure flag and terminates, so even messages already queued never reach `update`. Stale results cannot happen, and no job ids are needed. Progress is bytes read over blob size, posted at most once per percent. A worker `error` event becomes `WORKER_FAILED`. `worker.js` maps unexpected exceptions at the boundary, `NotReadableError` to `READ_FAILED` and `RangeError` to `OUT_OF_MEMORY`, and core trusts its typed inputs (per boundary-discipline). Main fetches the worker script once at boot and spawns every job from a blob: URL, so jobs start while offline.
+`runJob(workerUrl, request, onEvent)` spawns the worker, posts the request, forwards events, and terminates the worker after the terminal event. `cancel()` clears a closure flag and terminates, so even messages already queued never reach `update`. Stale results cannot happen, and no job ids are needed. Progress is bytes read over blob size, posted at most once per percent. A worker `error` event becomes `WORKER_FAILED`. `worker.js` maps unexpected exceptions at the boundary, `NotReadableError` and `NotFoundError` (a file deleted after it was chosen) to `READ_FAILED` and `RangeError` to `OUT_OF_MEMORY`, and core trusts its typed inputs (per boundary-discipline). Main fetches the worker script once at boot and spawns every job from a blob: URL, so jobs start while offline.
 
 ### UI state machine, embed, offline (Q8)
 
