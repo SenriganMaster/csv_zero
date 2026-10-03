@@ -1,0 +1,10 @@
+id,value,note
+1,"ab",U+0001
+2,"cd",U+001F
+3,_x0041_,literal
+4,  x  ,spaces
+5,"cronly",lone CR
+6,制御文字のない行,padding
+7,もう一つの普通の行,padding
+8,行数を足して制御文字を1%未満にする,padding
+9,テキストとして判定されるための行,padding
