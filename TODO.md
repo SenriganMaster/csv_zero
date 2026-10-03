@@ -12,5 +12,5 @@
 - [x] アセット: favicon（SVG + PNG）、OGP 画像 1200x630 (作業中)
 - [ ] E2E: Playwright（Shift_JIS・貼り付け・タブ・セル内改行・オフライン・外部通信ゼロ・スクリーンショット）
 - [ ] 性能: 20MB CSV の計測（プレビュー / xlsx）、UI 応答性、100MB の挙動
-- [ ] デプロイ: deploy.yml（main への push のみ）/ ci.yml（pull_request）/ .htaccess
+- [x] デプロイ: deploy.yml（main への push のみ）/ ci.yml（pull_request）/ .htaccess (2026-10-03 完了)
 - [ ] README.md・decisions.tsv 監査・REPORT
