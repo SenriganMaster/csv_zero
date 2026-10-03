@@ -119,6 +119,11 @@ describe('analyze', () => {
     assert.deepEqual(analysis.replaced, { count: 1, row: 1, col: 1 });
   });
 
+  test('one comma in a one-column file splits that row and warns of ragged rows, not of one column', async () => {
+    const analysis = await analysisOf(memorySource('住所\n大阪府大阪市北区梅田1-1,梅田ビル5F\n東京都千代田区丸の内1-1\n札幌市中央区北1条西2\n'));
+    assert.deepEqual(planSheet(analysis, TEXT_ONLY).warnings, [{ code: 'RAGGED_ROWS', count: 1, row: 1 }]);
+  });
+
   test('a forced delimiter is used as is, with no SINGLE_COLUMN', async () => {
     const analysis = await analysisOf(fileSource('tab.tsv'), { encoding: 'auto', delimiter: ',' });
     assert.deepEqual(analysis.detected.delimiter, { delimiter: ',', singleColumn: false });

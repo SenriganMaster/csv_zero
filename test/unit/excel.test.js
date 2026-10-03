@@ -220,7 +220,6 @@ describe('planSheet', () => {
         replaced: { count: 7, row: 0, col: 3 },
         ragged: { count: 1, row: 2 },
         unterminatedQuoteRow: 2,
-        detected: { encoding: { encoding: 'utf-8', bom: false, asciiOnly: false }, delimiter: { delimiter: ',', singleColumn: true } },
       }),
       { header: true, autoColumns: [] },
     );
@@ -233,8 +232,15 @@ describe('planSheet', () => {
       { code: 'DECODE_REPLACED', count: 7, row: 0, col: 3 },
       { code: 'RAGGED_ROWS', count: 1, row: 2 },
       { code: 'UNTERMINATED_QUOTE', row: 2 },
-      { code: 'SINGLE_COLUMN' },
     ]);
+  });
+
+  test('SINGLE_COLUMN only when the sheet has one column', () => {
+    const detected = { encoding: { encoding: 'utf-8', bom: false, asciiOnly: false }, delimiter: { delimiter: ',', singleColumn: true } };
+    const options = { header: true, autoColumns: [] };
+    const single = analysis({ detected, cols: 1, columns: analysis().columns.slice(0, 1) });
+    assert.deepEqual(planSheet(single, options).warnings, [{ code: 'SINGLE_COLUMN' }]);
+    assert.deepEqual(planSheet(analysis({ detected }), options).warnings, []);
   });
 
   test('exactly at the limits nothing blocks', () => {

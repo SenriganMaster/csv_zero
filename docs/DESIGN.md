@@ -104,7 +104,7 @@ For the delimiter, the read decodes the first 64 KiB with the resolved encoding 
 | # | Rule | Result |
 |---|---|---|
 | 1 | the user picked a delimiter | that delimiter |
-| 2 | no candidate has m of 2 or more | `,` with `singleColumn: true`, shown as `SINGLE_COLUMN` |
+| 2 | no candidate has m of 2 or more | `,` with `singleColumn: true`, shown as `SINGLE_COLUMN` when the parse ends with one column. A comma past the sample, or in a minority of records, still splits its record, and `RAGGED_ROWS` says so |
 | 3 | otherwise, rank candidates with m of 2 or more by fewest o, then m, then the extension (`.tsv` prefers tab, `.csv` comma), then tab, comma, semicolon, since a tab inside text is rarer than a comma. A count, not a share: a share rounded to tenths let a header that tab splits and comma does not vanish after 20 rows, and comma won on m with 1,234,567 in every row | the first |
 
 ### Parser (Q3)
@@ -251,7 +251,7 @@ Errors are values of `AppError` in `messages.js`. Only `describe()` words them, 
 | DECODE_REPLACED | undecodable characters (the decoder's count), and the first cell with U+FFFD, warning | 文字コードを正しく読めなかった文字が{count}文字あります（最初: {row}行目・{col}列）。文字コードを切り替えると直ることがあります。 |
 | UNTERMINATED_QUOTE | EOF inside quotes, warning | {row}行目で始まる引用符（"）が閉じられていません。ファイルの最後までを1つのセルとして読み込みました。 |
 | RAGGED_ROWS | records whose field count differs from the most common one, warning | ほかの行と列の数が違う行が{count}行あります（最初: {row}行目）。足りない列は空欄として扱います。 |
-| SINGLE_COLUMN | delimiter rule 2, info | 区切り文字が見つからなかったため、1列のデータとして読み込みました。必要なら区切り文字を選び直してください。 |
+| SINGLE_COLUMN | delimiter rule 2 and one column after the parse, info | 区切り文字が見つからなかったため、1列のデータとして読み込みました。必要なら区切り文字を選び直してください。 |
 
 There is no warning for 自動 columns, because `autoNumber` only converts values whose display does not change.
 

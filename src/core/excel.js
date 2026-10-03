@@ -242,12 +242,12 @@ function blockers({ rows, cols, overlong }) {
  * @param {import('./convert.js').Analysis} analysis
  * @returns {import('./messages.js').AppError[]}
  */
-function warnings({ replaced, ragged, unterminatedQuoteRow, detected }) {
+function warnings({ replaced, ragged, unterminatedQuoteRow, detected, cols }) {
   /** @type {import('./messages.js').AppError[]} */
   const found = [];
   if (replaced) found.push({ code: 'DECODE_REPLACED', ...replaced });
   if (ragged) found.push({ code: 'RAGGED_ROWS', ...ragged });
   if (unterminatedQuoteRow !== null) found.push({ code: 'UNTERMINATED_QUOTE', row: unterminatedQuoteRow });
-  if (detected.delimiter.singleColumn) found.push({ code: 'SINGLE_COLUMN' });
+  if (detected.delimiter.singleColumn && cols === 1) found.push({ code: 'SINGLE_COLUMN' });
   return found;
 }
