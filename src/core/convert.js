@@ -65,7 +65,7 @@ export async function analyze(source, choice, hooks) {
   }
   if (tally.rows() === 0) return { ok: false, error: { code: 'EMPTY_FILE' } };
   if (!previewed) hooks.onPreview(preview);
-  return { ok: true, value: { ...preview, ...tally.result(next.value.damage), unterminatedQuoteRow: next.value.unterminatedQuoteRow } };
+  return { ok: true, value: { ...preview, ...tally.result(next.value.undecodable), unterminatedQuoteRow: next.value.unterminatedQuoteRow } };
 }
 
 /**
@@ -90,7 +90,7 @@ export async function write(format, source, analysis, options, onProgress) {
  * @param {Blob} blob
  * @param {ParseSettings} settings
  * @param {(ratio: number) => void} onProgress
- * @returns {AsyncGenerator<string[][], { unterminatedQuoteRow: number | null, damage: number }, void>}
+ * @returns {AsyncGenerator<string[][], { unterminatedQuoteRow: number | null, undecodable: number }, void>}
  */
 async function* recordBatches(blob, settings, onProgress) {
   const reader = createCsvReader(settings.delimiter);
@@ -102,7 +102,7 @@ async function* recordBatches(blob, settings, onProgress) {
   }
   const { records, unterminatedQuoteRow } = reader.finish();
   if (records.length > 0) yield records;
-  return { unterminatedQuoteRow, damage: next.value };
+  return { unterminatedQuoteRow, undecodable: next.value };
 }
 
 /**
@@ -161,13 +161,13 @@ function createTally(shown) {
     },
     previewFull: () => shown.length === PREVIEW.records || previewChars >= PREVIEW.budget,
     rows: () => rows,
-    /** @param {number} damage */
-    result: (damage) => ({
+    /** @param {number} undecodable */
+    result: (undecodable) => ({
       rows,
       cols,
       columns,
       overlong: overlong.count > 0 ? overlong : null,
-      replaced: damage > 0 && replaced.count > 0 ? { ...replaced, count: damage } : null,
+      replaced: undecodable > 0 && replaced.count > 0 ? { ...replaced, count: undecodable } : null,
       ragged: raggedRecords(shapes),
     }),
   };
