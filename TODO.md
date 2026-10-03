@@ -10,7 +10,7 @@
 - [x] コアエンジン: 文字コード判定・区切り判定・RFC 4180 パーサ・Excel崩れ判定・xlsx / CSV 書き出し + 単体テスト (2026-10-04 完了)
 - [x] UI: index.html / styles.css / main.js / worker.js、埋め込みモード、SEO 本文、JSON-LD、CSP (2026-10-04 完了)
 - [x] アセット: favicon（SVG + PNG）、OGP 画像 1200x630 (2026-10-04 完了)
-- [x] E2E: Playwright（Shift_JIS・貼り付け・タブ・セル内改行・オフライン・外部通信ゼロ・スクリーンショット） (作業中)
-- [x] 性能: 20MB CSV の計測（プレビュー / xlsx）、UI 応答性、100MB の挙動 (作業中)
+- [x] E2E: Playwright（Shift_JIS・貼り付け・タブ・セル内改行・オフライン・外部通信ゼロ・スクリーンショット） (2026-10-04 完了)
+- [x] 性能: 20MB CSV の計測（プレビュー / xlsx）、UI 応答性、100MB の挙動 (2026-10-04 完了)
 - [x] デプロイ: deploy.yml（main への push のみ）/ ci.yml（pull_request）/ .htaccess (2026-10-03 完了)
-- [ ] README.md・decisions.tsv 監査・REPORT
+- [x] README.md・decisions.tsv 監査・REPORT (作業中)
