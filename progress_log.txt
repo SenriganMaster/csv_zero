@@ -1,0 +1,3 @@
+2026-10-03 22:27 JST  セッション開始。docs/BRIEF.md を読了。リポジトリは README.md と BRIEF.md のみ（グリーンフィールド）。
+2026-10-03 22:35 JST  環境確認: Node 20.19.2 / npm 9.2.0 / Python 3.13.5 / Google Chrome 154 / LibreOffice あり / Noto Sans CJK JP あり。
+                      Node でも TextDecoder('shift_jis') が CP932（①・髙）を復号でき、CompressionStream('deflate-raw') も使える。

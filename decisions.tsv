@@ -1,0 +1,4 @@
+ts	phase	decision	why	evidence	result
+2026-10-03T13:36:38Z	frame	Done predicate taken verbatim from docs/BRIEF.md: npm ci && build && test green, deploy/ via python3 http.server converts samples to all-text xlsx, 20MB without freezing, zero third-party requests, polished screenshots, deploy.yml per spec	the brief is the spec, so the exit condition is falsifiable before any code	docs/BRIEF.md:63-64	open
+2026-10-03T13:36:38Z	frame	Probed toolchain before design: Node 20 decodes CP932 (①髙) via TextDecoder shift_jis, CompressionStream deflate-raw exists in Node 20, LibreOffice + Noto Sans CJK JP + Chrome 154 installed	zero-dependency zip via native CompressionStream and LibreOffice as an independent xlsx reader are only viable if the box has them	progress_log.txt	native deflate and real-app verification both available
+2026-10-03T13:36:38Z	frame	Feature playbook; step 1 how skipped	repo holds only README.md and docs/BRIEF.md, no subsystem to trace	git ls-files	skip
