@@ -72,7 +72,8 @@ export async function* decodeText(blob, encoding, onBytes, sliceBytes = SLICE_BY
 }
 
 /**
- * Rules 2-7, which look only at the first SNIFF_BYTES. Rule 7 runs after 4-6, so UTF-16 is not mistaken for binary.
+ * Rules 2-7, which look only at the first SNIFF_BYTES. Rule 6 only sees heads that rule 7 would call binary, since
+ * UTF-16 text is full of NULs and 8-bit text has almost none.
  * @param {Uint8Array} head
  * @returns {'NOT_CSV_XLSX' | 'NOT_CSV_XLS' | 'NOT_CSV_BINARY' | EncodingVerdict | null}  null leaves the choice to rules 8-10.
  */
@@ -82,9 +83,11 @@ function sniff(head) {
   for (const encoding of /** @type {const} */ (['utf-8', 'utf-16le', 'utf-16be'])) {
     if (startsWith(head, /** @type {number[]} */ (BOMS[encoding]))) return { encoding, bom: true, asciiOnly: false };
   }
+  let controls = 0;
+  for (const byte of head) if (isControl(byte)) controls++;
+  if (controls <= head.length * 0.01) return null;
   const utf16 = utf16WithoutBom(head);
-  if (utf16) return { encoding: utf16, bom: false, asciiOnly: false };
-  return controlBytes(head) > head.length * 0.01 ? 'NOT_CSV_BINARY' : null;
+  return utf16 ? { encoding: utf16, bom: false, asciiOnly: false } : 'NOT_CSV_BINARY';
 }
 
 /**
@@ -163,35 +166,40 @@ function countReplacements(text) {
   return count;
 }
 
-/** @param {Uint8Array} head @returns {'utf-16le' | 'utf-16be' | null} */
+/**
+ * The byte order whose code units hold a CSV's TAB, LF, CR, comma or semicolon at least once per 200 units, with
+ * at most 1% control units. Read in the other order, those characters become U+0900, U+0A00 and so on. NUL parity
+ * cannot decide it: 　 (U+3000) and 一 (U+4E00) put their 00 byte where ASCII puts its 00 in the other order.
+ * @param {Uint8Array} head
+ * @returns {'utf-16le' | 'utf-16be' | null}
+ */
 function utf16WithoutBom(head) {
-  let even = 0;
-  let odd = 0;
-  for (let i = 0; i < head.length; i++) {
-    if (head[i] === 0) {
-      if (i % 2 === 0) even++;
-      else odd++;
-    }
+  const units = head.length >> 1;
+  const le = { structure: 0, controls: 0 };
+  const be = { structure: 0, controls: 0 };
+  for (let i = 0; i < units; i++) {
+    const first = head[2 * i];
+    const second = head[2 * i + 1];
+    if (second === 0) countUnit(le, first);
+    if (first === 0) countUnit(be, second);
   }
-  const nul = even + odd;
-  if (nul < head.length * 0.1) return null;
-  if (odd >= nul * 0.9) return 'utf-16le';
-  if (even >= nul * 0.9) return 'utf-16be';
-  return null;
+  const [encoding, best] = le.structure >= be.structure ? /** @type {const} */ (['utf-16le', le]) : /** @type {const} */ (['utf-16be', be]);
+  return best.structure >= units * 0.005 && best.controls <= units * 0.01 ? encoding : null;
+}
+
+/** @param {{ structure: number, controls: number }} counts @param {number} low  A code unit below U+0100. */
+function countUnit(counts, low) {
+  if (low === 0x09 || low === 0x0a || low === 0x0d || low === 0x2c || low === 0x3b) counts.structure++;
+  else if (isControl(low)) counts.controls++;
 }
 
 /**
- * Bytes 00-08, 0E-1A and 1C-1F, the C0 controls that text does not use. TAB, LF, VT, FF and CR are whitespace,
+ * 00-08, 0E-1A and 1C-1F, the C0 controls that text does not use. TAB, LF, VT, FF and CR are whitespace,
  * and ESC starts ISO-2022-JP escapes.
- * @param {Uint8Array} head
+ * @param {number} byte
  */
-function controlBytes(head) {
-  let count = 0;
-  for (let i = 0; i < head.length; i++) {
-    const byte = head[i];
-    if (byte <= 0x08 || (byte >= 0x0e && byte <= 0x1a) || (byte >= 0x1c && byte <= 0x1f)) count++;
-  }
-  return count;
+function isControl(byte) {
+  return byte <= 0x08 || (byte >= 0x0e && byte <= 0x1a) || (byte >= 0x1c && byte <= 0x1f);
 }
 
 /** @param {Uint8Array} bytes */

@@ -5,6 +5,13 @@ import { encodeShiftJis } from '../helpers/sjis.js';
 import { fixture } from '../helpers/fixtures.js';
 
 const utf8 = (/** @type {string} */ text) => new TextEncoder().encode(text);
+/** @param {string} text @param {boolean} littleEndian */
+const utf16 = (text, littleEndian) =>
+  Array.from({ length: text.length }, (_, i) => text.charCodeAt(i)).flatMap((unit) =>
+    littleEndian ? [unit & 0xff, unit >> 8] : [unit >> 8, unit & 0xff],
+  );
+/** Long kanji fields, with 　 (U+3000) and 一 (U+4E00), whose 00 byte sits where ASCII's does in the other byte order. */
+const KANJI_LINES = '株式会社山田商事　東京本社営業部,東京都千代田区丸の内一丁目一番一号\r\n'.repeat(40);
 const PNG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52];
 
 /** Fixed pseudo-random bytes. @param {number} length */
@@ -51,7 +58,11 @@ describe('detectEncoding', () => {
     ['UTF-16BE BOM', [0xfe, 0xff, 0x00, 0x61], 'auto', verdict('utf-16be', true)],
     ['UTF-16LE without BOM', [0x61, 0x00, 0x2c, 0x00, 0x62, 0x00], 'auto', verdict('utf-16le')],
     ['UTF-16BE without BOM', [0x00, 0x61, 0x00, 0x2c, 0x00, 0x62], 'auto', verdict('utf-16be')],
+    ['UTF-16LE without BOM, long kanji fields', utf16(KANJI_LINES, true), 'auto', verdict('utf-16le')],
+    ['UTF-16BE without BOM, long kanji fields', utf16(KANJI_LINES, false), 'auto', verdict('utf-16be')],
     ['PNG header plus noise', [...PNG, ...noise(1000)], 'auto', failure('NOT_CSV_BINARY')],
+    ['16-bit little-endian numbers below 256', [...noise(1000)].flatMap((byte) => [byte, 0]), 'auto', failure('NOT_CSV_BINARY')],
+    ['ASCII ending in one NUL', [...utf8('a,b\n'.repeat(100)), 0x00], 'auto', verdict('utf-8', false, true)],
     ['2,000 UTF-8 kana with one FF byte', [...utf8('あ'.repeat(2000)), 0xff], 'auto', verdict('utf-8')],
     ['ASCII only', utf8('a,b\r\n1,2\r\n'), 'auto', verdict('utf-8', false, true)],
     ['UTF-8 with a correctly encoded U+FFFD', utf8('名前,\uFFFD\n'), 'auto', verdict('utf-8')],

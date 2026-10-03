@@ -87,7 +87,7 @@ The rules run in order and the first match decides. Rules 1-7 run whatever the c
 | 3 | starts `D0 CF 11 E0 A1 B1 1A E1` | `NOT_CSV_XLS` |
 | 4 | starts `EF BB BF` | utf-8 with BOM |
 | 5 | starts `FF FE`, or starts `FE FF` | utf-16le with BOM, or utf-16be with BOM |
-| 6 | in the first 64 KiB, NUL is at least 10 % of bytes and at least 90 % of NULs sit at odd offsets, or at even offsets | utf-16le, or utf-16be, without BOM |
+| 6 | the rule 7 test holds, and the first 64 KiB read as UTF-16 in one byte order has TAB, LF, CR, comma or semicolon in at least 0.5 % of code units and controls in at most 1 % (NUL parity fails on 　 and 一, whose 00 byte sits where ASCII's does in the other order) | utf-16le, or utf-16be, without BOM |
 | 7 | in the first 64 KiB, bytes 00-08, 0E-1A and 1C-1F exceed 1 % | `NOT_CSV_BINARY` |
 | 8 | the whole file through a non-fatal UTF-8 decoder yields no replacement | utf-8 (`asciiOnly` when no byte is 80 or above) |
 | 9 | replacements are at most 1 % of the bytes at 80 or above | utf-8 with damage, followed by `DECODE_REPLACED` |
