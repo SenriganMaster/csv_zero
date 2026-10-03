@@ -37,6 +37,19 @@ test('pasted tab-separated text downloads exact cells', async ({ page }) => {
   assertTextWorkbook(readWorkbook(await downloadBytes(page, 'download-xlsx')), records);
 });
 
+test('text dropped on the paste box is left for the browser to insert', async ({ page }) => {
+  await openApp(page);
+  await page.locator('[data-testid="paste-tab"]').click();
+  const cancelled = await page.locator('[data-testid="paste-input"]').evaluate((input) => {
+    const dataTransfer = new DataTransfer();
+    dataTransfer.setData('text/plain', 'a,b');
+    const drop = new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer });
+    input.dispatchEvent(drop);
+    return drop.defaultPrevented;
+  });
+  expect(cancelled).toBe(false);
+});
+
 test('tab.tsv keeps 1,000 in one cell', async ({ page }) => {
   await openApp(page);
   await uploadFixture(page, 'tab.tsv');

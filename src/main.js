@@ -224,6 +224,7 @@ function bindEvents(refs, store) {
     if (depth === 0) showDrag(refs, false);
   });
   refs.tool.addEventListener('drop', (event) => {
+    if (!carriesFiles(event)) return;
     event.preventDefault();
     depth = 0;
     showDrag(refs, false);
