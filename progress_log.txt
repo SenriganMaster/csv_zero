@@ -47,3 +47,4 @@
                       css-tree は 3.1.0 のまま。コミット: ed8e96e / bfd4fe4
 2026-10-05 10:04 JST  .cz-root の all:initial が Chrome の -webkit-locale を消し、同じ要素の lang=ja は子孫の言語になっていなかった。
                       投影した section.tool に lang=ja を付ける。幅 288px のヒントは、2 行目が「文字コード」で始まる。
+                      コミット: d156cdb
