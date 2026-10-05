@@ -38,3 +38,7 @@
 2026-10-04 02:26 JST  コメント整理（Comment Sicko）: 31 ファイルで 176 件を削除・短縮し、31 件を残した。コメントを除いたコードは 35 ファイル全てで変更前と同一（esbuild で比較）。
                       MUST KILL 24 件: 6 件対応（レビュー修正で 3 件、区切りの同点処理・RISK_KINDS の共有・列幅 50 のテストで 3 件）、17 件は TODO へ、1 件は対応不要。
                       コミット: c6d00d1 / 5a41e64 / b6c62ea / 3950f2e / 4d18f00 / fa740f8 / 766540b
+2026-10-05 09:35 JST  WordPress のカスタム HTML に貼る断片（build:wp）。src/app.js の mount(MountSite) をページと影の両方から使う。
+                      CSS は css-tree で影向けに投影し、styles.css は分割しない。断片は1行の data URL スクリプトだけ。
+                      検証は hostile フィルタを通したハーネス上の Playwright。deploy/ のビルドは別のまま。
+                      コミット: 1457855 / 22bb808 / 61d9f32 / e32637f / 1613fff

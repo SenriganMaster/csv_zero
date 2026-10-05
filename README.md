@@ -114,6 +114,17 @@ addEventListener("message", function (e) {
 </script>
 ```
 
+## WordPress に直接埋め込む（build:wp）
+
+`npm run build:wp` は、ツールだけを1行の HTML 断片にします。`dist-wp/` は生成物なので git には入れません。文章の下書きは `docs/wp/PAGE-DRAFT.md` が原本で、ビルドが `dist-wp/PAGE-DRAFT.md` にコピーします。
+
+- `dist-wp/csv-zero-wp.html` は、カスタム HTML ブロックに貼る断片です。
+- `dist-wp/csv-zero-wp.block.html` は、同じ断片を Gutenberg の `wp:html` ブロックで包んだものです。REST API の `content` にそのまま渡せます。
+
+スクリプトは `data:text/javascript;base64,...` の1本だけです。テーマの文字やボタンの見た目は、ツールの内側には入りません。公開サイト用の `npm run build`（`deploy/`）とは別の成果物です。
+
+ローカルで見た目を確認するには、先に `npm run build:wp` を実行してから `node scripts/wp-harness/serve.mjs` を使います。
+
 ## 性能（計測値）
 
 検証環境（Linux、Google Chrome 154 のヘッドレスモード、`npm run perf` を 2 回）で計測した値です。端末の性能によって変わります。
