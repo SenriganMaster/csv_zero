@@ -1,4 +1,6 @@
 export const HOST_ID = 'csv-zero-app';
+export const INNER_CLASS = 'cz-root';
+export const INNER_LANG = 'ja';
 
 /**
  * @param {string} fallback

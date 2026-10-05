@@ -19,6 +19,9 @@ describe('WordPress shadow sheet', () => {
     assert.equal(markup.html.includes('class="tool"'), true);
     const css = projectShadowCss(fs.readFileSync(path.join(root, 'src', 'styles.css'), 'utf8'), markup.surface);
     assert.match(css, /:host\{all:initial/);
+    assert.match(css, /\.cz-root\{all:initial;display:block;[^}]*overflow-wrap:normal;word-break:normal;/);
+    assert.match(css, /\.cz-root\{[^}]*letter-spacing:normal;[^}]*text-align:start;[^}]*text-transform:none;[^}]*white-space:normal;/);
+    assert.match(css, /\.cz-root\{[^}]*font-weight:normal;[^}]*-webkit-text-size-adjust:100%;[^}]*color-scheme:light;/);
     assert.match(css, /container-name:csv-zero/);
     assert.match(css, /@container csv-zero \(min-width:900px\)/);
     assert.match(css, /@media \(pointer:coarse\)/);

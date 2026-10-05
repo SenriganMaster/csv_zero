@@ -1,4 +1,5 @@
 import * as csstree from 'css-tree';
+import { INNER_CLASS } from './fragment-contract.mjs';
 
 const ROOT_PX = 16;
 
@@ -19,6 +20,7 @@ export function projectShadowCss(css, surface) {
   filterList(ast.children, surface);
   convertRem(ast);
   decorateHost(ast, { font, text, lineHeight });
+  decorateInnerRoot(ast, { font, text, lineHeight });
   stripOverriddenViewport(ast);
   assertClean(ast, surface, css);
   return csstree.generate(ast);
@@ -201,6 +203,22 @@ function decorateHost(ast, tokens) {
   for (let index = decls.length - 1; index >= 0; index -= 1) {
     host.block.children.prependData(csstree.clone(decls[index]));
   }
+}
+
+/**
+ * A theme rule that names the host beats :host, and the used value then
+ * inherits into the shadow tree. This element is only addressable from the
+ * shadow sheet, so the page cannot put those properties back.
+ * @param {import('css-tree').CssNode} ast
+ * @param {{ font: string, text: string, lineHeight: string }} tokens
+ */
+function decorateInnerRoot(ast, tokens) {
+  const parsed = csstree.parse(
+    `.${INNER_CLASS}{all:initial;display:block;box-sizing:border-box;overflow-wrap:normal;word-break:normal;line-break:auto;letter-spacing:normal;word-spacing:normal;text-align:start;text-indent:0;text-transform:none;white-space:normal;font-style:normal;font-weight:normal;font-variant:normal;text-shadow:none;visibility:visible;cursor:auto;direction:ltr;writing-mode:horizontal-tb;-webkit-text-size-adjust:100%;text-size-adjust:100%;color-scheme:light;font-family:${tokens.font};color:${tokens.text};line-height:${tokens.lineHeight};font-size:16px}`,
+  );
+  const rule = parsed.children.first;
+  if (rule?.type !== 'Rule' || ast.type !== 'StyleSheet') throw new Error('failed to build inner root');
+  ast.children.appendData(rule);
 }
 
 /** @param {import('css-tree').CssNode} ast */
