@@ -42,3 +42,6 @@
                       CSS は css-tree で影向けに投影し、styles.css は分割しない。断片は1行の data URL スクリプトだけ。
                       検証は hostile フィルタを通したハーネス上の Playwright。deploy/ のビルドは別のまま。
                       コミット: 1457855 / 22bb808 / 61d9f32 / e32637f / 1613fff
+2026-10-05 09:54 JST  Cocoon の実機で、テーマの overflow-wrap などが :host を超えて影の中へ継承していた。
+                      影の中に div.cz-root lang=ja を置き、そこで文字の継承を切る。currentScript が null でも #csv-zero-app か body 末尾へ載せる。
+                      css-tree は 3.1.0 のまま。コミット: ed8e96e / bfd4fe4

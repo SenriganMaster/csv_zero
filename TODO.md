@@ -27,6 +27,7 @@
 - [x] deploy.yml の FTP-Deploy-Action をコミット SHA に固定する（v4.3.6 = a51268f） (2026-10-04 完了)
 - [ ] styles.css（約 2,100 行）を tokens / tool / content / embed に分ける（WordPress 断片は分割せず、ビルド時に影向けへ投影する）
 - [x] WordPress のカスタム HTML に貼る build:wp 断片 (2026-10-05 完了)
+- [x] WordPress 断片: テーマの文字設定が影へ継承されないこと、currentScript が無くても起動すること (2026-10-05 完了)
 - [ ] zip エントリを書き込み型にして xlsx.js の handoff() をなくす
 - [ ] view.js のキャッシュ変数を減らし、プレビュー表を 2 回作るのをやめる
 - [ ] 文字コードを手動で指定したら、規則 7（バイナリ判定）を外せるようにする
