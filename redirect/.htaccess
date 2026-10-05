@@ -1,0 +1,8 @@
+# csv-zero moved to https://senrinomitiwohitoaside.com/csv-zero/ (2026-10-05)
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^ https://senrinomitiwohitoaside.com/csv-zero/ [R=301,L,QSD]
+</IfModule>
+<IfModule !mod_rewrite.c>
+  Redirect 301 /csv-zero https://senrinomitiwohitoaside.com/csv-zero/
+</IfModule>

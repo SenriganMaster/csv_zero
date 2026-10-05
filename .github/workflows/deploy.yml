@@ -43,6 +43,11 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
+      - name: Replace site with redirect to senrinomitiwohitoaside.com
+        run: |
+          rm -rf deploy
+          cp -r redirect deploy
+          ls -la deploy
       - name: Upload (attempt 1)
         id: ftp1
         continue-on-error: true
