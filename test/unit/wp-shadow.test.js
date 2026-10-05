@@ -17,6 +17,7 @@ describe('WordPress shadow sheet', () => {
     assert.equal(markup.fallback, 'このツールを使うには、ブラウザのJavaScriptを有効にしてください。');
     assert.equal(markup.html.includes('embed-credit'), false);
     assert.equal(markup.html.includes('class="tool"'), true);
+    assert.match(markup.html, /^<section lang="ja" /);
     const css = projectShadowCss(fs.readFileSync(path.join(root, 'src', 'styles.css'), 'utf8'), markup.surface);
     assert.match(css, /:host\{all:initial/);
     assert.match(css, /\.cz-root\{all:initial;display:block;[^}]*overflow-wrap:normal;word-break:normal;/);

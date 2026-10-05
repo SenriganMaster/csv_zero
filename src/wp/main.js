@@ -1,5 +1,5 @@
 import { mount } from '../app.js';
-import { HOST_ID, INNER_CLASS, INNER_LANG } from '../../scripts/wp/fragment-contract.mjs';
+import { HOST_ID, INNER_CLASS } from '../../scripts/wp/fragment-contract.mjs';
 
 const current = document.currentScript;
 const script = current instanceof HTMLScriptElement ? current : null;
@@ -23,7 +23,6 @@ function start() {
   style.textContent = __SHADOW_CSS__;
   const inner = document.createElement('div');
   inner.className = INNER_CLASS;
-  inner.lang = INNER_LANG;
   const template = document.createElement('template');
   template.innerHTML = __TOOL_MARKUP__;
   inner.append(template.content);

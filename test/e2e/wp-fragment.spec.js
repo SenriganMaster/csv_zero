@@ -82,6 +82,41 @@ test('a WordPress fragment survives hostile filters and converts inside the shad
     textTransform: 'none',
     whiteSpace: 'normal',
   });
+  expect(await page.locator('.cz-root').getAttribute('lang')).toBeNull();
+  expect(await page.locator('[data-testid="tool"]').getAttribute('lang')).toBe('ja');
+  await page.locator('.entry-content').evaluate((element) => {
+    element.style.width = '354px';
+  });
+  const hintLines = await page.locator('.dropzone-hint').evaluate((element) => {
+    const textNode = element.firstChild;
+    if (!(textNode instanceof Text)) return { width: 0, lines: [] };
+    const text = textNode.data;
+    /** @type {string[]} */
+    const lines = [];
+    let line = '';
+    let lineTop = 0;
+    for (let index = 0; index < text.length; index += 1) {
+      const range = document.createRange();
+      range.setStart(textNode, index);
+      range.setEnd(textNode, index + 1);
+      const rect = range.getClientRects()[0];
+      if (!rect) continue;
+      if (line && rect.top - lineTop > rect.height * 0.5) {
+        lines.push(line);
+        line = '';
+      }
+      if (!line) lineTop = rect.top;
+      line += text[index];
+    }
+    if (line) lines.push(line);
+    return { width: element.getBoundingClientRect().width, lines };
+  });
+  expect(hintLines.width, JSON.stringify(hintLines)).toBeGreaterThan(280);
+  expect(hintLines.width, JSON.stringify(hintLines)).toBeLessThan(296);
+  expect(hintLines.lines[1], JSON.stringify(hintLines)).toMatch(/^文字コード/);
+  await page.locator('.entry-content').evaluate((element) => {
+    element.style.width = '760px';
+  });
   expect(await dropzone.evaluate((element) => {
     const style = getComputedStyle(element);
     return {
@@ -145,7 +180,8 @@ test('a module script mounts when currentScript is null', async ({ page }) => {
   await expect(page.locator('#csv-zero-app')).toHaveCount(1);
   expect(await page.evaluate(() => document.body.lastElementChild?.id)).toBe('csv-zero-app');
   await expect(page.locator('[data-testid="dropzone"]')).toBeVisible();
-  expect(await page.locator('.cz-root').getAttribute('lang')).toBe('ja');
+  expect(await page.locator('.cz-root').getAttribute('lang')).toBeNull();
+  expect(await page.locator('[data-testid="tool"]').getAttribute('lang')).toBe('ja');
 
   fs.writeFileSync(path.join(harnessDir, 'index.html'), renderHarness('<div id="csv-zero-app">このツールを使うには、ブラウザのJavaScriptを有効にしてください。</div>'));
   /** @type {string[]} */

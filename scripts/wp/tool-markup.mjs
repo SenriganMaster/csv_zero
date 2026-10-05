@@ -1,3 +1,5 @@
+import { INNER_LANG } from './fragment-contract.mjs';
+
 /**
  * @typedef {Readonly<{
  *   classes: ReadonlySet<string>,
@@ -48,6 +50,9 @@ export function readToolMarkup(indexHtml, viewSource) {
   const fallback = (noscripts[0][1] ?? '').replace(/<[^>]+>/g, '').trim();
   if (fallback.length === 0) throw new Error('tool noscript is empty');
   html = html.replace(noscripts[0][0], '');
+  html = html.replace(/^<section\b([^>]*)>/, (tag, rest) => (
+    /\blang=/.test(rest) ? tag : `<section lang="${INNER_LANG}"${rest}>`
+  ));
 
   /** @type {Set<string>} */
   const classes = new Set();
