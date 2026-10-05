@@ -1,5 +1,6 @@
 node_modules/
 deploy/
+dist-wp/
 screens/
 test-results/
 playwright-report/
