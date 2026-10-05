@@ -48,3 +48,4 @@
 2026-10-05 10:04 JST  .cz-root の all:initial が Chrome の -webkit-locale を消し、同じ要素の lang=ja は子孫の言語になっていなかった。
                       投影した section.tool に lang=ja を付ける。幅 288px のヒントは、2 行目が「文字コード」で始まる。
                       コミット: d156cdb
+2026-10-05 10:21 JST  Twenty Twenty-Five は影ホストの :focus に 2px の枠を描く。ホストへ outline:none !important をインラインで付け、中のボタンの枠は影のスタイルのまま。

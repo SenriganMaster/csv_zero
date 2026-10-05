@@ -17,6 +17,7 @@ function start() {
     if (parent) parent.insertBefore(host, script);
     else document.body.append(host);
   }
+  host.style.setProperty('outline', 'none', 'important');
   if (host.shadowRoot) return;
   const shadow = host.attachShadow({ mode: 'open' });
   const style = document.createElement('style');

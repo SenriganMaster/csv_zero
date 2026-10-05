@@ -138,6 +138,24 @@ test('a WordPress fragment survives hostile filters and converts inside the shad
 
   await page.locator('[data-testid="file-input"]').setInputFiles(path.join(root, 'test', 'fixtures', 'sjis-bank.csv'));
   await page.locator('[data-testid="tool"][data-phase="ready"]').waitFor();
+  const xlsx = page.locator('[data-testid="download-xlsx"]');
+  await expect(xlsx).toBeFocused();
+  expect(await page.locator('#csv-zero-app').evaluate((element) => ({
+    focus: element.matches(':focus'),
+    outlineStyle: getComputedStyle(element).outlineStyle,
+  }))).toEqual({ focus: true, outlineStyle: 'none' });
+  expect(await xlsx.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      outlineStyle: style.outlineStyle,
+      outlineWidth: style.outlineWidth,
+      outlineColor: style.outlineColor,
+    };
+  })).toEqual({
+    outlineStyle: 'solid',
+    outlineWidth: '2px',
+    outlineColor: 'rgb(11, 123, 97)',
+  });
   await expect(page.locator('[data-testid="preview"]')).toContainText('0001');
   expect(await page.locator('.preview-title').evaluate((element) => getComputedStyle(element).fontSize)).not.toBe('32px');
   expect(await page.locator('[data-testid="encoding"]').evaluate((element) => getComputedStyle(element).fontSize)).not.toBe('20px');
