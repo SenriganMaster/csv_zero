@@ -1,9 +1,8 @@
 import { mount } from '../app.js';
-import { HOST_ID } from '../../scripts/wp/fragment-contract.mjs';
+import { HOST_ID, INNER_CLASS, INNER_LANG } from '../../scripts/wp/fragment-contract.mjs';
 
 const current = document.currentScript;
-if (!(current instanceof HTMLScriptElement)) throw new Error('csv-zero wp boot has no currentScript');
-const script = current;
+const script = current instanceof HTMLScriptElement ? current : null;
 
 let started = false;
 
@@ -14,19 +13,24 @@ function start() {
   const host = found ?? document.createElement('div');
   if (!found) {
     host.id = HOST_ID;
-    if (script.parentNode) script.parentNode.insertBefore(host, script);
+    const parent = script?.parentNode;
+    if (parent) parent.insertBefore(host, script);
     else document.body.append(host);
   }
   if (host.shadowRoot) return;
   const shadow = host.attachShadow({ mode: 'open' });
   const style = document.createElement('style');
   style.textContent = __SHADOW_CSS__;
+  const inner = document.createElement('div');
+  inner.className = INNER_CLASS;
+  inner.lang = INNER_LANG;
   const template = document.createElement('template');
   template.innerHTML = __TOOL_MARKUP__;
-  shadow.append(style, template.content);
+  inner.append(template.content);
+  shadow.append(style, inner);
   mount({ kind: 'shadow', shadow });
 }
 
-const waitForParse = document.readyState === 'loading' || (script.defer && document.readyState !== 'complete');
-if (waitForParse) document.addEventListener('DOMContentLoaded', start, { once: true });
+const deferred = script !== null && script.defer && document.readyState !== 'complete';
+if (document.readyState === 'loading' || deferred) document.addEventListener('DOMContentLoaded', start, { once: true });
 else start();

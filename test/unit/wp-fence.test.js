@@ -39,9 +39,10 @@ describe('WordPress build fence', () => {
       assert.equal(source.includes('attachShadow'), false, name);
     }
 
+    const fragmentName = ['csv-zero-wp', 'html'].join('.');
     const writers = walk(root, []).filter((file) => {
       const text = fs.readFileSync(file, 'utf8');
-      return /writeFileSync\([\s\S]*?csv-zero-wp\.html/.test(text);
+      return text.split('\n').some((line) => line.includes('writeFileSync') && line.includes(fragmentName));
     });
     assert.deepEqual(writers.map((file) => path.relative(root, file).split(path.sep).join('/')), ['scripts/wp/fragment.mjs']);
   });

@@ -44,6 +44,62 @@ test('a WordPress fragment survives hostile filters and converts inside the shad
   expect(await dropzone.evaluate((element) => getComputedStyle(element).paddingTop)).not.toBe('0px');
   await expect(page.locator('.dropzone-title')).toHaveCSS('font-size', '20px');
   await expect(page.locator('#csv-zero-app')).toHaveCSS('font-size', '16px');
+  expect(await page.locator('#csv-zero-app').evaluate((element) => getComputedStyle(element).overflowWrap)).toBe('anywhere');
+  expect(await page.locator('.dropzone-title').evaluate((element) => element.closest('[lang]')?.getAttribute('lang'))).toBe('ja');
+  expect(await page.locator('.cz-root').evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      overflowWrap: style.overflowWrap,
+      wordBreak: style.wordBreak,
+      letterSpacing: style.letterSpacing,
+      textAlign: style.textAlign,
+      fontWeight: style.fontWeight,
+      textTransform: style.textTransform,
+      whiteSpace: style.whiteSpace,
+      lineBreak: style.lineBreak,
+    };
+  })).toEqual({
+    overflowWrap: 'normal',
+    wordBreak: 'normal',
+    letterSpacing: 'normal',
+    textAlign: 'start',
+    fontWeight: '400',
+    textTransform: 'none',
+    whiteSpace: 'normal',
+    lineBreak: 'auto',
+  });
+  expect(await page.locator('.dropzone-title').evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      overflowWrap: style.overflowWrap,
+      wordBreak: style.wordBreak,
+      textTransform: style.textTransform,
+      whiteSpace: style.whiteSpace,
+    };
+  })).toEqual({
+    overflowWrap: 'normal',
+    wordBreak: 'auto-phrase',
+    textTransform: 'none',
+    whiteSpace: 'normal',
+  });
+  expect(await dropzone.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      overflowWrap: style.overflowWrap,
+      wordBreak: style.wordBreak,
+      letterSpacing: style.letterSpacing,
+      fontWeight: style.fontWeight,
+      textTransform: style.textTransform,
+      whiteSpace: style.whiteSpace,
+    };
+  })).toEqual({
+    overflowWrap: 'normal',
+    wordBreak: 'normal',
+    letterSpacing: 'normal',
+    fontWeight: '400',
+    textTransform: 'none',
+    whiteSpace: 'normal',
+  });
 
   await page.locator('[data-testid="file-input"]').setInputFiles(path.join(root, 'test', 'fixtures', 'sjis-bank.csv'));
   await page.locator('[data-testid="tool"][data-phase="ready"]').waitFor();
@@ -71,3 +127,59 @@ test('a WordPress fragment survives hostile filters and converts inside the shad
   expect(later).toEqual([]);
   await server.close();
 });
+
+test('a module script mounts when currentScript is null', async ({ page }) => {
+  await publishWordPress(root, path.join(root, 'dist-wp'));
+  const line = fs.readFileSync(path.join(root, 'dist-wp', 'csv-zero-wp.html'), 'utf8');
+  const program = programFromFragment(line);
+  fs.mkdirSync(harnessDir, { recursive: true });
+  const server = await startServer(harnessDir, 0);
+
+  fs.writeFileSync(path.join(harnessDir, 'index.html'), renderHarness(''));
+  /** @type {string[]} */
+  const createdErrors = [];
+  page.on('pageerror', (error) => createdErrors.push(error.message));
+  await page.goto(server.url);
+  await bootAsModule(page, program);
+  expect(createdErrors, createdErrors.join('\n')).toEqual([]);
+  await expect(page.locator('#csv-zero-app')).toHaveCount(1);
+  expect(await page.evaluate(() => document.body.lastElementChild?.id)).toBe('csv-zero-app');
+  await expect(page.locator('[data-testid="dropzone"]')).toBeVisible();
+  expect(await page.locator('.cz-root').getAttribute('lang')).toBe('ja');
+
+  fs.writeFileSync(path.join(harnessDir, 'index.html'), renderHarness('<div id="csv-zero-app">このツールを使うには、ブラウザのJavaScriptを有効にしてください。</div>'));
+  /** @type {string[]} */
+  const existingErrors = [];
+  page.on('pageerror', (error) => existingErrors.push(error.message));
+  await page.goto(server.url);
+  await bootAsModule(page, program);
+  expect(existingErrors, existingErrors.join('\n')).toEqual([]);
+  await expect(page.locator('#csv-zero-app')).toHaveCount(1);
+  expect(await page.locator('#csv-zero-app').evaluate((element) => element.parentElement?.className)).toBe('entry-content');
+  await expect(page.locator('[data-testid="dropzone"]')).toBeVisible();
+  expect(await page.locator('.dropzone-title').evaluate((element) => element.closest('[lang]')?.getAttribute('lang'))).toBe('ja');
+  await server.close();
+});
+
+/** @param {string} line */
+function programFromFragment(line) {
+  const match = line.match(/src="data:text\/javascript;base64,([A-Za-z0-9+/=]+)"/);
+  if (!match) throw new Error('fragment has no program');
+  return Buffer.from(match[1], 'base64').toString('utf8');
+}
+
+/** @param {import('@playwright/test').Page} page @param {string} program */
+async function bootAsModule(page, program) {
+  await page.evaluate(async (source) => {
+    const blob = new Blob([source], { type: 'text/javascript' });
+    const url = URL.createObjectURL(blob);
+    await new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.type = 'module';
+      script.src = url;
+      script.onload = () => resolve(undefined);
+      script.onerror = () => reject(new Error('module boot failed'));
+      document.body.append(script);
+    });
+  }, program);
+}
